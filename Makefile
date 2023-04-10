@@ -22,6 +22,6 @@ run: build
 
 .PHONY: test
 test:
-	xmake f -m debug
-	xmake build --yes test_gim
+	xmake f -m debug --yes
+	xmake build test_gim
 	xmake run test_gim
