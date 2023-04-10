@@ -1,6 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 #include <gim/ecs/ecs.hpp>
+#include <gim/ecs/entity_manager.hpp>
 
 using namespace gim::ecs;
 

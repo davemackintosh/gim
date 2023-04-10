@@ -1,5 +1,6 @@
 .PHONY: build
 build:
+	xmake project -k compile_commands
 	xmake build
 
 .PHONY: run
