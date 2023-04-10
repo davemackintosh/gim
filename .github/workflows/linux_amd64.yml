@@ -16,7 +16,7 @@ jobs:
     - name: Check xmake
       run: xmake --version
     - name: Test
-      run: xmake f -m debug && make test
+      run: xmake --yes f -m debug && make test
     - name: build release
       run: xmake f -m release && make build
 
