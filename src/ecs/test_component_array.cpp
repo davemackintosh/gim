@@ -1,18 +1,19 @@
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
-#include <gim/ecs/ecs.hpp>
+#include <gim/ecs/component_array.hpp>
+#include <memory>
 
 using namespace gim::ecs;
 
 TEST_CASE("component-array") {
-	auto componentArray = ComponentArray<int>();
+	auto componentArray = ComponentArray<TESTING::TestComponent>();
 	Entity entity = 0;
-	int component = 5;
+	auto component = std::make_unique<TESTING::TestComponent>(5);
 
-	componentArray.insertData(entity, component);
-	CHECK(componentArray.getData(entity) == 5);
-	CHECK(componentArray.hasData(entity) == true);
+	componentArray.insertData(entity, std::move(component));
+	CHECK(componentArray.hasData(entity));
+	CHECK(componentArray.getData<TESTING::TestComponent>(entity)->getValue() ==
+		  5);
 
 	componentArray.removeData(entity);
-	CHECK(componentArray.hasData(entity) == false);
+	CHECK(!componentArray.hasData(entity));
 }

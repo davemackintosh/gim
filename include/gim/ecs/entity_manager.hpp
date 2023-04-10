@@ -1,3 +1,5 @@
+#pragma once
+
 #include <gim/ecs/ecs.hpp>
 
 namespace gim::ecs {
@@ -13,9 +15,7 @@ class EntityManager {
 	 * entities array with all possible entities so that we can keep the
 	 * memory contiguous and allow for fast iteration and data locality.
 	 */
-	EntityManager() {
-		numEntities = 0;
-
+	EntityManager() : entities(), signatures(), numEntities(0) {
 		for (int i = 0; i < ECS_MAX_ENTITIES; i++) {
 			entities[i] = i;
 		}

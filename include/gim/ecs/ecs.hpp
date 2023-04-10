@@ -3,6 +3,9 @@
 #include <array>
 #include <bitset>
 #include <cstdint>
+// I don't know why this is required but tests were failing due to a missing
+// template.
+#include <iostream>
 
 namespace gim::ecs {
 
@@ -14,32 +17,20 @@ typedef std::bitset<ECS_MAX_COMPONENTS> Signature;
 
 // A Component is just a placeholder class which is used to identify
 // a component type in the ComponentArray and ComponentManager.
-class Component {
+class IComponent {
   public:
-	virtual ~Component() = default;
-
-	// No copy or move.
-	Component(const Component &) = delete;
-	Component(Component &&) = delete;
-	auto operator=(const Component &) -> Component & = delete;
-	auto operator=(Component &&) -> Component & = delete;
-
-  protected:
-	Component() = default;
+	virtual ~IComponent() = default;
 };
 
-template <typename T> class ComponentArray {
+namespace TESTING {
+// This is a test component which is used in the tests.
+class TestComponent : public IComponent {
   private:
-	std::array<T, ECS_MAX_ENTITIES> components;
-	std::array<Entity, ECS_MAX_ENTITIES> entities;
-	std::array<int, ECS_MAX_ENTITIES> indices;
-	int numComponents;
+	int value;
 
   public:
-	ComponentArray();
-	auto insertData(Entity entity, T component) -> void;
-	auto removeData(Entity entity) -> void;
-	auto getData(Entity entity) -> T &;
-	auto hasData(Entity entity) -> bool;
+	TestComponent(int value) { this->value = value; };
+	int getValue() { return value; };
 };
+} // namespace TESTING
 } // namespace gim::ecs
