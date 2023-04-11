@@ -5,16 +5,11 @@ on: [push, pull_request]
 jobs:
   linux:
     runs-on: ubuntu-latest
-    env:
-      VCPKG_ROOT: ./vcpkg
     steps:
     - uses: actions/checkout@v3
-    - name: Install XMake
-      run: |
-        sudo apt-get update
-        curl -fsSL https://xmake.io/shget.text | bash
-    - name: Check xmake
-      run: xmake --version
+    - uses: xmake-io/github-action-setup-xmake@v1
+      with:
+        xmake-version: latest
     - name: Test
       run: make test
     - name: build release
