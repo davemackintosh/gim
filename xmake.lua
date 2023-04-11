@@ -12,7 +12,9 @@ target("gim")
 
 	add_rules("mode.release", "mode.debug")
 	if is_mode("release") then
+		set_symbols("hidden")
 		set_optimize("fastest")
+		set_strip("all")
 	else
 		set_rules("mode.debug", "mode.check", "mode.asan", "mode.tsan", "mode.ubsan", "mode.coverage")
 		set_symbols("debug")

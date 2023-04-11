@@ -20,7 +20,7 @@ class ComponentManager {
 			return;
 		}
 
-		components.insert({typeName, std::make_unique<T>()});
+		// components.insert({typeName, std::make_unique<T>()});
 		componentArrays.insert(
 			{typeName, std::make_unique<ComponentArray<T>>()});
 	};
@@ -34,7 +34,7 @@ class ComponentManager {
 
 		auto componentArray =
 			static_cast<ComponentArray<T> *>(componentArrays[typeName].get());
-		componentArray->insertData(entity, std::move(component));
+		componentArray->template insertData<T>(entity, std::move(component));
 	};
 
 	template <typename T> auto removeComponent(Entity entity) -> void {
@@ -56,7 +56,7 @@ class ComponentManager {
 
 		auto componentArray =
 			static_cast<ComponentArray<T> *>(componentArrays[typeName].get());
-		return componentArray->hasData(entity);
+		return componentArray->template getData<T>(entity) != nullptr;
 	};
 
 	template <typename T>
@@ -68,7 +68,7 @@ class ComponentManager {
 
 		auto componentArray =
 			static_cast<ComponentArray<T> *>(componentArrays[typeName].get());
-		return componentArray->getData(entity);
+		return componentArray->template getData<T>(entity);
 	};
 
 	auto getComponentArray(std::string typeName)

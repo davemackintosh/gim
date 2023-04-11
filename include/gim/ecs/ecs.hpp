@@ -24,7 +24,7 @@ class IComponent {
 
 namespace TESTING {
 // This is a test component which is used in the tests.
-class TestComponent : public IComponent {
+class TestComponent : public virtual IComponent {
   private:
 	int value;
 

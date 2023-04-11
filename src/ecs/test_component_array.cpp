@@ -10,10 +10,9 @@ TEST_CASE("component-array") {
 	auto component = std::make_unique<TESTING::TestComponent>(5);
 
 	componentArray.insertData(entity, std::move(component));
-	CHECK(componentArray.hasData(entity));
 	CHECK(componentArray.getData<TESTING::TestComponent>(entity)->getValue() ==
 		  5);
 
 	componentArray.removeData(entity);
-	CHECK(!componentArray.hasData(entity));
+	CHECK(componentArray.getData<TESTING::TestComponent>(entity) == nullptr);
 }

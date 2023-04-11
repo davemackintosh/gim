@@ -5,9 +5,11 @@ using namespace gim::ecs;
 
 TEST_CASE("component-manager") {
 	auto componentManager = ComponentManager();
-	auto component = std::make_unique<TESTING::TestComponent>(5);
 	componentManager.registerComponent<TESTING::TestComponent>();
+
+	auto component = std::make_unique<TESTING::TestComponent>(5);
 	componentManager.addComponent(0, std::move(component));
+
 	CHECK(componentManager.hasComponent<TESTING::TestComponent>(0));
 	CHECK(
 		componentManager.getComponent<TESTING::TestComponent>(0)->getValue() ==
