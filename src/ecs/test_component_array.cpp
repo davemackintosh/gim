@@ -5,14 +5,15 @@
 using namespace gim::ecs;
 
 TEST_CASE("component-array") {
-	auto componentArray = ComponentArray<TESTING::TestComponent>();
+	auto componentArray =
+		std::make_unique<ComponentArray<TESTING::TestComponent>>();
 	Entity entity = 0;
-	auto component = std::make_unique<TESTING::TestComponent>(5);
+	auto component =
+		std::make_shared<TESTING::TestComponent>(TESTING::TestComponent{5});
 
-	componentArray.insertData(entity, std::move(component));
-	CHECK(componentArray.getData<TESTING::TestComponent>(entity)->getValue() ==
-		  5);
+	componentArray->insertData(entity, component);
+	CHECK(componentArray->getData(entity)->value == 5);
 
-	componentArray.removeData(entity);
-	CHECK(componentArray.getData<TESTING::TestComponent>(entity) == nullptr);
+	componentArray->removeData(entity);
+	CHECK(componentArray->getData(entity) == nullptr);
 }

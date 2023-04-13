@@ -1,3 +1,4 @@
+#include "gim/ecs/ecs.hpp"
 #include <doctest/doctest.h>
 #include <gim/ecs/entity_manager.hpp>
 
@@ -8,7 +9,8 @@ TEST_CASE("entity-manager") {
 	CHECK(e1 == 0);
 
 	em.setSignature(e1, 1);
-	CHECK(em.getSignature(e1) == 1);
+	CHECK(em.getSignature(e1) != nullptr);
+	CHECK(*em.getSignature(e1) == 1);
 
 	// Create another entity, it should be 1.
 	// Destroy the first entity, it should be 1.
@@ -16,7 +18,7 @@ TEST_CASE("entity-manager") {
 	CHECK(e2 == 1);
 
 	em.destroyEntity(e1);
-	CHECK(em.getSignature(e1) == 0);
+	CHECK(em.getSignature(e1) == nullptr);
 
 	// Create another entity, it should be 0
 	// because we destroyed the first entity

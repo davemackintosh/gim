@@ -1,19 +1,25 @@
+#include "gim/ecs/component_manager.hpp"
 #include <doctest/doctest.h>
-#include <gim/ecs/component_manager.hpp>
+#include <gim/ecs/component_array.hpp>
+#include <memory>
 
 using namespace gim::ecs;
 
+class TestComponent : public IComponent {
+  public:
+	int x;
+
+	TestComponent(int x) : x(x) {}
+};
+
 TEST_CASE("component-manager") {
-	auto componentManager = ComponentManager();
-	componentManager.registerComponent<TESTING::TestComponent>();
+	ComponentManager cm;
 
-	auto component = std::make_unique<TESTING::TestComponent>(5);
-	componentManager.addComponent(0, std::move(component));
+	cm.registerComponent<TestComponent>();
+	CHECK(cm.getComponentArray<TestComponent>() != nullptr);
 
-	CHECK(componentManager.hasComponent<TESTING::TestComponent>(0));
-	CHECK(
-		componentManager.getComponent<TESTING::TestComponent>(0)->getValue() ==
-		5);
-	componentManager.removeComponent<TESTING::TestComponent>(0);
-	CHECK(!componentManager.hasComponent<TESTING::TestComponent>(0));
+	Entity e = 0;
+	TestComponent tc{1};
+	cm.addComponent(e, tc);
+	CHECK(cm.getComponent<TestComponent>(e).x == 1);
 }

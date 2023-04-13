@@ -66,9 +66,18 @@ class EntityManager {
 	 * @param entity The entity to get the signature of.
 	 * @return Signature The signature of the entity.
 	 */
-	auto getSignature(Entity entity) -> Signature {
+	auto getSignature(Entity entity) -> Signature* {
+		// Bounds check the entity.
+		if (entity > ECS_MAX_ENTITIES) {
+			return nullptr;
+		}
+
+		if (signatures[entity] == 0) {
+			return nullptr;
+		}
+
 		// Return the signature of the entity.
-		return signatures[entity];
+		return &signatures[entity];
 	}
 };
 } // namespace gim::ecs

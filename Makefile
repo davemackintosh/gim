@@ -9,8 +9,8 @@ compile_commands.json:
 
 .PHONY: debug
 debug:
-	xmake f -m debug
-	xmake build gim
+	@xmake f -m debug
+	@xmake build gim
 
 .PHONY: build
 build: compile_commands.json
@@ -21,7 +21,7 @@ run: build
 	xmake run
 
 .PHONY: test
-test:
+test: compile_commands.json
 	xmake f -m debug --yes --verbose
 	xmake build test_gim
 	xmake run test_gim
