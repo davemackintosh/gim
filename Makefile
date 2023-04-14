@@ -4,12 +4,10 @@ clean:
 
 .PHONY: compile_commands.json
 compile_commands.json:
-	xmake f -m debug
-	xmake project -k compile_commands
+	@xmake project -k compile_commands
 
 .PHONY: debug
-debug:
-	@xmake f -m debug
+debug: compile_commands.json
 	@xmake build gim
 
 .PHONY: build
@@ -22,6 +20,5 @@ run: build
 
 .PHONY: test
 test: compile_commands.json
-	xmake f -m debug --yes --verbose
 	xmake build test_gim
 	xmake run test_gim
