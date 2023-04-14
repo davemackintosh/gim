@@ -1,6 +1,6 @@
-#include "gim/ecs/component_manager.hpp"
 #include <doctest/doctest.h>
 #include <gim/ecs/component_array.hpp>
+#include <gim/ecs/component_manager.hpp>
 #include <memory>
 
 using namespace gim::ecs;
@@ -19,7 +19,7 @@ TEST_CASE("component-manager") {
 	CHECK(cm.getComponentArray<TestComponent>() != nullptr);
 
 	Entity e = 0;
-	TestComponent tc{1};
+	auto tc = std::make_shared<TestComponent>(1);
 	cm.addComponent(e, tc);
-	CHECK(cm.getComponent<TestComponent>(e).x == 1);
+	CHECK(cm.getComponent<TestComponent>(e)->x == 1);
 }

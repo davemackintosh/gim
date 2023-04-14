@@ -10,10 +10,9 @@ namespace gim::ecs {
 class IComponentArray {
   public:
 	virtual ~IComponentArray() = default;
-	virtual void insertData(Entity entity,
-							std::shared_ptr<IComponent> component) = 0;
-	virtual std::shared_ptr<IComponent> getData(Entity entity) = 0;
-	virtual void removeData(Entity entity) = 0;
+	// There is no need to virtualise the methods below, because
+	// they are not called from the base class pointer. This is
+	// just a way to satisfy the compiler.
 };
 
 /**
