@@ -20,6 +20,10 @@ class ISystem {
 	virtual void update() = 0;
 
 	auto getEntities() -> std::vector<Entity> { return entities; }
+	template <typename T>
+	auto getComponent(Entity entity) -> std::shared_ptr<T> {
+		return componentManager->getComponent<T>(entity);
+	}
 	auto insertEntity(Entity entity) -> void { entities.push_back(entity); }
 	auto removeEntity(Entity entity) -> void {
 		entities.erase(std::remove(entities.begin(), entities.end(), entity),
@@ -62,6 +66,7 @@ class SystemManager {
 		-> void {
 		for (auto const &[key, system] : systems) {
 			auto const &systemSignature = system->getSignature();
+
 			if (entitySignature->subsetOf(systemSignature)) {
 				system->insertEntity(entity);
 			} else {

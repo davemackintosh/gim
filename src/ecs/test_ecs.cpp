@@ -2,6 +2,7 @@
 #include <gim/ecs/component_array.hpp>
 #include <gim/ecs/ecs.hpp>
 #include <gim/ecs/signature.hpp>
+#include <iostream>
 
 class TestComponent : public gim::ecs::IComponent {
   public:
@@ -20,8 +21,7 @@ class TestSystem : public gim::ecs::ISystem {
 
 	void update() override {
 		for (auto &entity : getEntities()) {
-			auto component =
-				componentManager->getComponent<TestComponent>(entity);
+			auto component = getComponent<TestComponent>(entity);
 			component->x += 5;
 		}
 	}
@@ -43,8 +43,10 @@ TEST_CASE("ECS") {
 	ecs.addComponent(e2, c2);
 
 	CHECK(ecs.getComponent<TestComponent>(e1)->x == 5);
+	CHECK(ecs.getComponent<TestComponent>(e2)->x == 10);
 
 	ecs.update();
 
-	CHECK(ecs.getComponent<TestComponent>(e2)->x == 10);
+	CHECK(ecs.getComponent<TestComponent>(e1)->x == 10);
+	CHECK(ecs.getComponent<TestComponent>(e2)->x == 15);
 }
