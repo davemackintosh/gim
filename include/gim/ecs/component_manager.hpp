@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gim/ecs/component_array.hpp"
 #include <assert.h>
+#include <gim/ecs/component_array.hpp>
 #include <gim/ecs/ecs.hpp>
 #include <map>
 #include <memory>

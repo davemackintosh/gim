@@ -8,9 +8,9 @@ TEST_CASE("entity-manager") {
 
 	CHECK(e1 == 0);
 
-	em.setSignature(e1, 1);
+	em.setSignature(e1, gim::ecs::Signature());
 	CHECK(em.getSignature(e1) != nullptr);
-	CHECK(*em.getSignature(e1) == 1);
+	CHECK(*em.getSignature(e1) == gim::ecs::Signature());
 
 	// Create another entity, it should be 1.
 	// Destroy the first entity, it should be 1.

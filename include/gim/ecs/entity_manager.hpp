@@ -44,8 +44,8 @@ class EntityManager {
 	auto destroyEntity(Entity entity) -> void {
 		// Move the destroyed entity to the end of the array and decrease the
 		// numEntities, we also need to reset the signature of the entity.
-		signatures[entity].reset();
-		std::swap(entities[entity], entities[numEntities - 1]);
+		signatures.at(entity).reset();
+		std::swap(entities.at(entity), entities.at(numEntities - 1));
 		numEntities--;
 	};
 
@@ -66,18 +66,14 @@ class EntityManager {
 	 * @param entity The entity to get the signature of.
 	 * @return Signature The signature of the entity.
 	 */
-	auto getSignature(Entity entity) -> Signature* {
+	auto getSignature(Entity entity) -> Signature * {
 		// Bounds check the entity.
 		if (entity > ECS_MAX_ENTITIES) {
 			return nullptr;
 		}
 
-		if (signatures[entity] == 0) {
-			return nullptr;
-		}
-
 		// Return the signature of the entity.
-		return &signatures[entity];
+		return &signatures.at(entity);
 	}
 };
 } // namespace gim::ecs
