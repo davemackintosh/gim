@@ -1,12 +1,21 @@
 #pragma once
 
-#include <gim/ecs/ecs.hpp>
+#include <array>
+#include <gim/ecs/signature.hpp>
+#include <memory>
 
 namespace gim::ecs {
-class EntityManager {
+typedef uint32_t Entity;
+/**
+ * @brief The entity manager class.
+ *
+ * @tparam ECS_MAX_ENTITIES The maximum number of entities that can exist at
+ * any given time.
+ */
+template <int ECS_MAX_ENTITIES> class EntityManager {
   private:
 	std::array<Entity, ECS_MAX_ENTITIES> entities;
-	std::array<Signature, ECS_MAX_ENTITIES> signatures;
+	std::array<std::shared_ptr<Signature>, ECS_MAX_ENTITIES> signatures;
 	int numEntities;
 
   public:
@@ -44,8 +53,8 @@ class EntityManager {
 	auto destroyEntity(Entity entity) -> void {
 		// Move the destroyed entity to the end of the array and decrease the
 		// numEntities, we also need to reset the signature of the entity.
-		signatures.at(entity).reset();
-		std::swap(entities.at(entity), entities.at(numEntities - 1));
+		signatures[entity].reset();
+		std::swap(entities[entity], entities[numEntities - 1]);
 		numEntities--;
 	};
 
@@ -55,7 +64,8 @@ class EntityManager {
 	 * @param entity The entity to set the signature of.
 	 * @param signature The signature to set.
 	 */
-	auto setSignature(Entity entity, Signature signature) -> void {
+	auto setSignature(Entity entity, std::shared_ptr<Signature> signature)
+		-> void {
 		// Set the signature of the entity.
 		signatures[entity] = signature;
 	};
@@ -66,14 +76,9 @@ class EntityManager {
 	 * @param entity The entity to get the signature of.
 	 * @return Signature The signature of the entity.
 	 */
-	auto getSignature(Entity entity) -> Signature * {
-		// Bounds check the entity.
-		if (entity > ECS_MAX_ENTITIES) {
-			return nullptr;
-		}
-
+	auto getSignature(Entity entity) -> std::shared_ptr<Signature> {
 		// Return the signature of the entity.
-		return &signatures.at(entity);
+		return signatures[entity];
 	}
 };
 } // namespace gim::ecs

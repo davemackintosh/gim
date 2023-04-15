@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string_view>
 #include <typeinfo>
 
@@ -33,6 +34,18 @@ class Signature {
 	auto reset() -> void { signature.clear(); }
 
 	auto empty() -> bool { return signature.empty(); }
+
+	auto subsetOf(std::shared_ptr<Signature> other) -> bool {
+		for (auto const &[key, value] : signature) {
+			if (other->signature.find(key) == other->signature.end()) {
+				return false;
+			}
+			if (value != other->signature.at(key)) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	auto operator&(Signature const &other) -> Signature {
 		Signature result;

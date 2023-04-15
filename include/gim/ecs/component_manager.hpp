@@ -1,8 +1,7 @@
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <gim/ecs/component_array.hpp>
-#include <gim/ecs/ecs.hpp>
 #include <map>
 #include <memory>
 #include <string_view>

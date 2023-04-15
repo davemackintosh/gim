@@ -1,23 +1,47 @@
 #pragma once
 
 #include <assert.h>
+#include <gim/ecs/component_manager.hpp>
 #include <gim/ecs/ecs.hpp>
 #include <map>
 #include <memory>
+#include <string_view>
+#include <typeinfo>
+#include <vector>
 
 namespace gim::ecs {
+class ISystem {
+  private:
+	std::vector<Entity> entities;
+
+  public:
+	std::shared_ptr<ComponentManager> componentManager;
+	virtual ~ISystem() = default;
+	virtual auto getSignature() -> std::shared_ptr<Signature> = 0;
+	virtual void update() = 0;
+	virtual auto insertEntity(Entity entity) -> void = 0;
+	virtual auto removeEntity(Entity entity) -> void = 0;
+};
+
 class SystemManager {
   private:
 	std::map<std::string_view, std::shared_ptr<ISystem>> systems;
+	std::shared_ptr<ComponentManager> componentManager;
 
   public:
+	SystemManager(std::shared_ptr<ComponentManager> componentManager) {
+		this->componentManager = componentManager;
+	}
+
 	template <typename T> auto registerSystem() -> void {
 		std::string_view typeName = typeid(T).name();
 
 		assert(systems.find(typeName) == systems.end() &&
 			   "Registering system type more than once.");
 
-		systems.insert({typeName, std::make_shared<T>()});
+		auto system = std::make_shared<T>();
+		system->componentManager = componentManager;
+		systems.insert({typeName, system});
 	}
 
 	template <typename T> auto getSystem() -> T * {
@@ -29,12 +53,13 @@ class SystemManager {
 		return std::static_pointer_cast<T>(systems.at(typeName)).get();
 	}
 
-	auto entitySignatureChanged(Entity entity, Signature entitySignature)
+	auto entitySignatureChanged(Entity entity,
+								std::shared_ptr<Signature> entitySignature)
 		-> void {
 		for (auto const &[key, system] : systems) {
 			auto const &systemSignature = system->getSignature();
-			if ((entitySignature & systemSignature) == systemSignature) {
-				system->addEntity(entity);
+			if (entitySignature->subsetOf(systemSignature)) {
+				system->insertEntity(entity);
 			} else {
 				system->removeEntity(entity);
 			}

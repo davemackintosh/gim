@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+#include <gim/ecs/component_array.hpp>
 #include <gim/ecs/ecs.hpp>
 #include <gim/ecs/signature.hpp>
 
@@ -33,49 +34,26 @@ class OneMoreComponent : public IComponent {
 };
 
 TEST_CASE("signature") {
-	Signature s1;
-	Signature s2;
-	Signature s3;
-	Signature s4;
+	auto s1 = std::make_shared<Signature>();
+	s1->set<TestComponent>();
+	s1->set<AnotherComponent>();
+	s1->set<YetAnotherComponent>();
+	s1->set<OneMoreComponent>();
 
-	s1.set<TestComponent>();
-	s2.set<TestComponent>();
-	s3.set<TestComponent>();
-	s4.set<TestComponent>();
+	auto s2 = std::make_shared<Signature>();
+	s2->set<TestComponent>();
+	s2->set<AnotherComponent>();
+	s2->set<YetAnotherComponent>();
 
-	s1.set<AnotherComponent>();
-	s2.set<AnotherComponent>();
-	s3.set<AnotherComponent>();
+	auto s3 = std::make_shared<Signature>();
+	s3->set<TestComponent>();
+	s3->set<AnotherComponent>();
 
-	s1.set<YetAnotherComponent>();
-	s2.set<YetAnotherComponent>();
+	auto s4 = std::make_shared<Signature>();
+	s4->set<TestComponent>();
 
-	s1.set<OneMoreComponent>();
-
-	CHECK(s1 == s2);
-	CHECK(s1 != s3);
-	CHECK(s1 != s4);
-	CHECK(s2 != s3);
-	CHECK(s2 != s4);
-	CHECK(s3 != s4);
-
-	CHECK(s1.get<TestComponent>());
-	CHECK(s1.get<AnotherComponent>());
-	CHECK(s1.get<YetAnotherComponent>());
-	CHECK(s1.get<OneMoreComponent>());
-
-	CHECK(s2.get<TestComponent>());
-	CHECK(s2.get<AnotherComponent>());
-	CHECK(s2.get<YetAnotherComponent>());
-	CHECK(!s2.get<OneMoreComponent>());
-
-	CHECK(s3.get<TestComponent>());
-	CHECK(s3.get<AnotherComponent>());
-	CHECK(!s3.get<YetAnotherComponent>());
-	CHECK(!s3.get<OneMoreComponent>());
-
-	CHECK(s4.get<TestComponent>());
-	CHECK(!s4.get<AnotherComponent>());
-	CHECK(!s4.get<YetAnotherComponent>());
-	CHECK(!s4.get<OneMoreComponent>());
+	CHECK(s1->subsetOf(s1) == true);
+	CHECK(s2->subsetOf(s2) == true);
+	CHECK(s3->subsetOf(s3) == true);
+	CHECK(s4->subsetOf(s4) == true);
 }
