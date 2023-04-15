@@ -20,5 +20,5 @@ run: build
 
 .PHONY: test
 test: compile_commands.json
-	xmake build test_gim
+	xmake build -v test_gim
 	xmake run test_gim

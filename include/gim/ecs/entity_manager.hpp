@@ -27,6 +27,7 @@ template <int ECS_MAX_ENTITIES> class EntityManager {
 	EntityManager() : entities(), signatures(), numEntities(0) {
 		for (int i = 0; i < ECS_MAX_ENTITIES; i++) {
 			entities[i] = i;
+			signatures[i] = std::make_shared<Signature>();
 		}
 	};
 
@@ -53,8 +54,8 @@ template <int ECS_MAX_ENTITIES> class EntityManager {
 	auto destroyEntity(Entity entity) -> void {
 		// Move the destroyed entity to the end of the array and decrease the
 		// numEntities, we also need to reset the signature of the entity.
-		signatures[entity].reset();
-		std::swap(entities[entity], entities[numEntities - 1]);
+		signatures.at(entity).reset();
+		std::swap(entities.at(entity), entities.at(numEntities - 1));
 		numEntities--;
 	};
 
@@ -67,7 +68,7 @@ template <int ECS_MAX_ENTITIES> class EntityManager {
 	auto setSignature(Entity entity, std::shared_ptr<Signature> signature)
 		-> void {
 		// Set the signature of the entity.
-		signatures[entity] = signature;
+		signatures.at(entity) = signature;
 	};
 
 	/**
@@ -78,7 +79,7 @@ template <int ECS_MAX_ENTITIES> class EntityManager {
 	 */
 	auto getSignature(Entity entity) -> std::shared_ptr<Signature> {
 		// Return the signature of the entity.
-		return signatures[entity];
+		return signatures.at(entity);
 	}
 };
 } // namespace gim::ecs

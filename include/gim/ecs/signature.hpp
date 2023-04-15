@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <map>
 #include <memory>
 #include <string_view>
@@ -11,10 +12,15 @@ class Signature {
 	std::map<std::string_view, bool> signature;
 
   public:
-	Signature() {}
+	Signature() { signature.clear(); }
 
 	template <typename T> auto set() -> void {
 		std::string_view typeName = typeid(T).name();
+
+		// Assert that the component has not been registered before.
+		assert(signature.find(typeName) == signature.end() &&
+			   "Registering component type more than once.");
+
 		signature.insert({typeName, true});
 	}
 

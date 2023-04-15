@@ -2,7 +2,6 @@
 
 #include <assert.h>
 #include <gim/ecs/component_manager.hpp>
-#include <gim/ecs/ecs.hpp>
 #include <map>
 #include <memory>
 #include <string_view>
@@ -19,8 +18,13 @@ class ISystem {
 	virtual ~ISystem() = default;
 	virtual auto getSignature() -> std::shared_ptr<Signature> = 0;
 	virtual void update() = 0;
-	virtual auto insertEntity(Entity entity) -> void = 0;
-	virtual auto removeEntity(Entity entity) -> void = 0;
+
+	auto getEntities() -> std::vector<Entity> { return entities; }
+	auto insertEntity(Entity entity) -> void { entities.push_back(entity); }
+	auto removeEntity(Entity entity) -> void {
+		entities.erase(std::remove(entities.begin(), entities.end(), entity),
+					   entities.end());
+	}
 };
 
 class SystemManager {

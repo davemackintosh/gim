@@ -12,7 +12,7 @@ class TestComponent : public IComponent {
 };
 
 TEST_CASE("component-array") {
-	auto componentArray = std::make_unique<ComponentArray<TestComponent>>();
+	auto componentArray = std::make_shared<ComponentArray<TestComponent>>();
 	Entity entity = 0;
 	auto component = std::make_shared<TestComponent>(TestComponent{5});
 

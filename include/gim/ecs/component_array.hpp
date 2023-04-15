@@ -17,6 +17,7 @@ class IComponent {
 class IComponentArray {
   public:
 	virtual ~IComponentArray() = default;
+	virtual void entityDestroyed(Entity entity) = 0;
 	// There is no need to virtualise the methods below, because
 	// they are not called from the base class pointer. This is
 	// just a way to satisfy the compiler.
@@ -62,6 +63,13 @@ class ComponentArray : public IComponentArray {
 	}
 
 	void removeData(Entity entity) {
+		auto it = std::find(entities.begin(), entities.end(), entity);
+		auto index = std::distance(entities.begin(), it);
+		entities.erase(entities.begin() + index);
+		components.erase(components.begin() + index);
+	}
+
+	void entityDestroyed(Entity entity) {
 		auto it = std::find(entities.begin(), entities.end(), entity);
 		auto index = std::distance(entities.begin(), it);
 		entities.erase(entities.begin() + index);

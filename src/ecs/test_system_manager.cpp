@@ -30,14 +30,6 @@ class TestSystem : public ISystem {
 			tc->x++;
 		}
 	}
-
-	auto insertEntity(Entity entity) -> void override {
-		entities.push_back(entity);
-	}
-	auto removeEntity(Entity entity) -> void override {
-		entities.erase(std::remove(entities.begin(), entities.end(), entity),
-					   entities.end());
-	}
 };
 
 TEST_CASE("system-manager") {

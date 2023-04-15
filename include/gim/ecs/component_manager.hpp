@@ -52,5 +52,11 @@ class ComponentManager {
 	auto getComponent(Entity entity) -> std::shared_ptr<T> {
 		return getComponentArray<T>()->getData(entity);
 	}
+
+	auto entityDestroyed(Entity entity) -> void {
+		for (auto const &[key, componentArray] : componentArrays) {
+			componentArray->entityDestroyed(entity);
+		}
+	}
 };
 } // namespace gim::ecs
