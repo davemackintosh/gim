@@ -9,27 +9,20 @@
 #include <vector>
 
 namespace gim::ecs {
+/**
+ * @brief The ISystem class is the base class for all systems.
+ */
 class ISystem {
-  private:
-	std::vector<Entity> entities;
-
   public:
-	std::shared_ptr<ComponentManager> componentManager;
 	virtual ~ISystem() = default;
 	virtual auto getSignature() -> std::shared_ptr<Signature> = 0;
+	virtual auto self() -> ISystem *const = 0;
 	virtual void update() = 0;
-
-	// Functions to use in the update methods of the derived systems.
-	auto getEntities() -> std::vector<Entity> { return entities; }
-	template <typename T>
-	auto getComponent(Entity entity) -> std::shared_ptr<T> {
-		return componentManager->getComponent<T>(entity);
-	}
-	auto insertEntity(Entity entity) -> void { entities.push_back(entity); }
-	auto removeEntity(Entity entity) -> void {
-		entities.erase(std::remove(entities.begin(), entities.end(), entity),
-					   entities.end());
-	}
+	virtual auto getEntities() -> std::vector<Entity> const & = 0;
+	virtual void insertEntity(Entity entity) = 0;
+	virtual void removeEntity(Entity entity) = 0;
+	virtual void setComponentManager(std::shared_ptr<ComponentManager> cm) = 0;
+	virtual auto getComponentManager() -> std::shared_ptr<ComponentManager> = 0;
 };
 
 template <class T>
@@ -59,7 +52,7 @@ class SystemManager {
 		assert(!systemRegistered<T>() && "Registering system more than once.");
 
 		systems.emplace_back(std::make_unique<T>());
-		systems.back()->componentManager = componentManager;
+		systems.back()->setComponentManager(componentManager);
 	}
 
 	auto entitySignatureChanged(Entity entity,
@@ -78,7 +71,7 @@ class SystemManager {
 
 	auto update() -> void {
 		for (auto const &system : systems) {
-			system->update();
+			system->self()->update();
 		}
 	}
 };

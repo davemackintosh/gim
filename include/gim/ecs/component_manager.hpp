@@ -29,6 +29,7 @@ class ComponentManager {
 	}
 
   public:
+	ComponentManager() { componentArrays.clear(); }
 	template <typename T> auto registerComponent() -> void {
 		std::string_view typeName = typeid(T).name();
 
