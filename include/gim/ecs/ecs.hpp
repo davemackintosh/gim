@@ -55,10 +55,6 @@ class ECS {
 		systemManager->registerSystem<T>();
 	}
 
-	template <typename T> auto getSystem() -> T {
-		return systemManager->getSystem<T>();
-	}
-
 	auto update() -> void { systemManager->update(); }
 };
 } // namespace gim::ecs

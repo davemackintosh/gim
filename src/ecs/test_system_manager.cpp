@@ -14,9 +14,6 @@ class TestComponent : public IComponent {
 };
 
 class TestSystem : public ISystem {
-  private:
-	std::vector<Entity> entities;
-
   public:
 	auto getSignature() -> std::shared_ptr<Signature> override {
 		auto signature = std::make_shared<Signature>();
@@ -25,8 +22,8 @@ class TestSystem : public ISystem {
 	}
 
 	auto update() -> void override {
-		for (auto const &entity : entities) {
-			auto tc = componentManager->getComponent<TestComponent>(entity);
+		for (auto const &entity : getEntities()) {
+			auto tc = getComponent<TestComponent>(entity);
 			tc->x++;
 		}
 	}
@@ -42,7 +39,7 @@ TEST_CASE("system-manager") {
 	cm->registerComponent<TestComponent>();
 	cm->addComponent(entity, std::make_shared<TestComponent>(1));
 
-	auto system = sm.getSystem<TestSystem>();
-	auto signature = system->getSignature();
-	CHECK(signature->get<TestComponent>());
+	sm.update();
+
+	CHECK(cm->getComponent<TestComponent>(entity)->x == 2);
 }

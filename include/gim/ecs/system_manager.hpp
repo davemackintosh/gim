@@ -19,6 +19,7 @@ class ISystem {
 	virtual auto getSignature() -> std::shared_ptr<Signature> = 0;
 	virtual void update() = 0;
 
+	// Functions to use in the update methods of the derived systems.
 	auto getEntities() -> std::vector<Entity> { return entities; }
 	template <typename T>
 	auto getComponent(Entity entity) -> std::shared_ptr<T> {
@@ -31,40 +32,40 @@ class ISystem {
 	}
 };
 
+template <class T>
+concept System = std::is_base_of_v<ISystem, T>;
+
 class SystemManager {
   private:
-	std::map<std::string_view, std::shared_ptr<ISystem>> systems;
+	std::vector<std::unique_ptr<ISystem>> systems;
 	std::shared_ptr<ComponentManager> componentManager;
+	template <System T> auto findSystem() -> int {
+		return std::find_if(systems.begin(), systems.end(),
+							[&](const std::unique_ptr<ISystem> &system) {
+								return typeid(system.get()) == typeid(T);
+							}) -
+			   systems.begin();
+	}
+	template <System T> auto systemRegistered() -> bool {
+		return findSystem<T>() != systems.size();
+	}
 
   public:
 	SystemManager(std::shared_ptr<ComponentManager> componentManager) {
 		this->componentManager = componentManager;
 	}
 
-	template <typename T> auto registerSystem() -> void {
-		std::string_view typeName = typeid(T).name();
+	template <System T> auto registerSystem() -> void {
+		assert(!systemRegistered<T>() && "Registering system more than once.");
 
-		assert(systems.find(typeName) == systems.end() &&
-			   "Registering system type more than once.");
-
-		auto system = std::make_shared<T>();
-		system->componentManager = componentManager;
-		systems.insert({typeName, system});
-	}
-
-	template <typename T> auto getSystem() -> T * {
-		std::string_view typeName = typeid(T).name();
-
-		assert(systems.find(typeName) != systems.end() &&
-			   "System not registered before use.");
-
-		return std::static_pointer_cast<T>(systems.at(typeName)).get();
+		systems.emplace_back(std::make_unique<T>());
+		systems.back()->componentManager = componentManager;
 	}
 
 	auto entitySignatureChanged(Entity entity,
 								std::shared_ptr<Signature> entitySignature)
 		-> void {
-		for (auto const &[key, system] : systems) {
+		for (auto const &system : systems) {
 			auto const &systemSignature = system->getSignature();
 
 			if (entitySignature->subsetOf(systemSignature)) {
@@ -76,7 +77,7 @@ class SystemManager {
 	}
 
 	auto update() -> void {
-		for (auto const &[key, system] : systems) {
+		for (auto const &system : systems) {
 			system->update();
 		}
 	}
