@@ -3,8 +3,11 @@ set_languages("c99", "c++20")
 set_warnings("all")
 -- Set the toolchain to Clang.
 set_toolset("clang")
-add_cxflags("-fsanitize=address", "-ftrapv")
-add_ldflags("-fsanitize=address")
+if not is_mode("release") then
+	-- Enable address sanitizer.
+	add_cxflags("-fsanitize=address", "-ftrapv")
+	add_ldflags("-fsanitize=address")
+end
 add_includedirs("include")
 
 target("gim")

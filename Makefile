@@ -8,15 +8,16 @@ compile_commands.json:
 
 .PHONY: debug
 debug: compile_commands.json
-	@xmake build gim
+	xmake f -m debug
+	xmake build gim
 
 .PHONY: build
-build: compile_commands.json
+build:
 	xmake build gim
 
 .PHONY: run
 run: build
-	xmake run
+	xmake run gim
 
 .PHONY: test
 test: compile_commands.json
