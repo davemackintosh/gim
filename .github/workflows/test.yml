@@ -1,0 +1,29 @@
+name: amd64 Linux
+
+on: [push, pull_request]
+
+jobs:
+  linux:
+    build_and_test:
+      name: Build & test Lamscript on ${{ matrix.os }} with ${{ matrix.compiler }}.
+      runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          os: [ubuntu-latest, macos-latest, windows-latest]
+          include:
+            - os: ubuntu-latest
+              target: Linux
+            - os: macos-latest
+              target: Macos
+            - os: windows-latest
+              target: Windows
+    steps:
+    - uses: actions/checkout@v3
+    - uses: xmake-io/github-action-setup-xmake@v1
+      with:
+        xmake-version: latest
+    - name: Test
+      run: make test
+    - name: build release
+      run: xmake f -m release && make build
+
