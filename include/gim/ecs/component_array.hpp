@@ -1,5 +1,6 @@
 #pragma once
 
+#include <_types/_uint32_t.h>
 #include <algorithm>
 #include <gim/ecs/entity_manager.hpp>
 #include <memory>
@@ -51,7 +52,7 @@ class ComponentArray : public IComponentArray {
 		// Find the index of the entity.
 		auto it = std::find(entities.begin(), entities.end(), entity);
 		// Get the index of the entity.
-		auto index = std::distance(entities.begin(), it);
+		int index = std::distance(entities.begin(), it);
 
 		// Check if the index is valid.
 		if (index >= entities.size()) {
