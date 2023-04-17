@@ -1,6 +1,5 @@
 #pragma once
 
-#include <_types/_uint32_t.h>
 #include <algorithm>
 #include <gim/ecs/entity_manager.hpp>
 #include <memory>
