@@ -4,7 +4,7 @@ clean:
 
 .PHONY: compile_commands.json
 compile_commands.json:
-	@xmake project -k compile_commands --yes
+	@xmake project -k compile_commands
 
 .PHONY: debug
 debug: compile_commands.json
@@ -17,6 +17,7 @@ build:
 
 .PHONY: run
 run: build
+	xmake build --yes gim
 	xmake run gim
 
 .PHONY: test
