@@ -13,7 +13,7 @@ jobs:
         include:
           - os: ubuntu-latest
             target: Linux
-            dependencies: sudo apt install glslang spirv-tools
+            dependencies: sudo apt install glslang-tools
           - os: macos-latest
             target: Macos
             dependencies: brew install glslang spirv-tools
