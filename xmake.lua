@@ -1,5 +1,6 @@
 add_requires("vcpkg::doctest", "vcpkg::vulkan-hpp")
-add_requires("vulkansdk", "glslang", "spirv-tools", { system = true })
+add_requires("vulkansdk", { system = true })
+add_requires("glslang", "spirv-tools")
 add_requires("vcpkg::sdl2 2.24.0", {
 	configs = {
 		features = {
