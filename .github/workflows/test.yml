@@ -6,6 +6,7 @@ jobs:
   linux:
     name: Build & test Gim on ${{ matrix.os }}.
     runs-on: ${{ matrix.os }}
+    run: ${{ matrix.dependencies }}
     strategy:
       fail-fast: false
       matrix:
@@ -13,17 +14,20 @@ jobs:
         include:
           - os: ubuntu-latest
             target: Linux
+            dependencies: sudo apt install glslang spirv-tools
           - os: macos-latest
             target: Macos
+            dependencies: brew install glslang spirv-tools
           - os: windows-latest
             target: Windows
+            dependencies: choco install glslang spirv-tools
     steps:
     - uses: actions/checkout@v3
     - name: Prepare Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.0
       with:
         vulkan-query-version: 1.3.204.0
-        vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang, SPIRV-Tools
+        vulkan-components: Vulkan-Headers, Vulkan-Loader
         vulkan-use-cache: true
     - uses: xmake-io/github-action-setup-xmake@v1
       with:
