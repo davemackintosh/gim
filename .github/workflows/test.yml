@@ -32,4 +32,3 @@ jobs:
       run: make test
     - name: build release
       run: xmake f -m release && make build
-

@@ -49,4 +49,3 @@ set_symbols("debug")
 set_optimize("none")
 add_files("src/**/test_*.cpp")
 add_packages("vcpkg::doctest")
-
