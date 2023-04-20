@@ -44,7 +44,7 @@ class SystemManager {
 	}
 
   public:
-	SystemManager(std::shared_ptr<ComponentManager> componentManager) {
+	explicit SystemManager(std::shared_ptr<ComponentManager> componentManager) {
 		this->componentManager = componentManager;
 	}
 

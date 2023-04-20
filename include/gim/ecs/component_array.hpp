@@ -69,7 +69,7 @@ class ComponentArray : public IComponentArray {
 		components.erase(components.begin() + index);
 	}
 
-	void entityDestroyed(Entity entity) {
+	void entityDestroyed(Entity entity) override {
 		auto it = std::find(entities.begin(), entities.end(), entity);
 		auto index = std::distance(entities.begin(), it);
 		entities.erase(entities.begin() + index);

@@ -8,17 +8,14 @@
 namespace gim::ecs {
 class ECS {
   private:
-	std::shared_ptr<EntityManager<100'00>> entityManager;
-	std::shared_ptr<ComponentManager> componentManager;
-	std::shared_ptr<SystemManager> systemManager;
+	std::shared_ptr<EntityManager<100'00>> entityManager =
+		std::make_shared<EntityManager<100'00>>();
+	std::shared_ptr<ComponentManager> componentManager =
+		std::make_shared<ComponentManager>();
+	std::shared_ptr<SystemManager> systemManager =
+		std::make_shared<SystemManager>();
 
   public:
-	ECS() {
-		entityManager = std::make_unique<EntityManager<100'00>>();
-		componentManager = std::make_unique<ComponentManager>();
-		systemManager = std::make_shared<SystemManager>(componentManager);
-	}
-
 	auto createEntity() -> Entity { return entityManager->createEntity(); }
 
 	auto destroyEntity(Entity entity) -> void {

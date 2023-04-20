@@ -9,7 +9,7 @@ class TestComponent : public IComponent {
   public:
 	int x;
 
-	TestComponent(int x) : x(x) {}
+	explicit TestComponent(int x) : x(x) {}
 };
 
 class TestSystem : public ISystem {

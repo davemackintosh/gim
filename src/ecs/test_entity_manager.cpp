@@ -3,13 +3,7 @@
 #include <doctest/doctest.h>
 #include <gim/ecs/component_array.hpp>
 #include <gim/ecs/entity_manager.hpp>
-
-class TestComponent : public gim::ecs::IComponent {
-  public:
-	int x;
-
-	TestComponent(int x) : x(x) {}
-};
+#include <gim/ecs/testing.hpp>
 
 TEST_CASE("entity-manager") {
 	auto em = gim::ecs::EntityManager<10>();
@@ -19,9 +13,9 @@ TEST_CASE("entity-manager") {
 
 	// Create a signature for the entity.
 	auto s1 = std::make_shared<gim::ecs::Signature>();
-	s1->set<TestComponent>();
+	s1->set<gim::ecs::TESTING::TestComponent>();
 	em.setSignature(e1, s1);
-	CHECK(em.getSignature(e1)->get<TestComponent>() == true);
+	CHECK(em.getSignature(e1)->get<gim::ecs::TESTING::TestComponent>() == true);
 	CHECK(em.getSignature(e1) != nullptr);
 
 	// Create another entity, it should be 1.

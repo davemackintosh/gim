@@ -9,28 +9,28 @@ class TestComponent : public IComponent {
   public:
 	int x;
 
-	TestComponent(int x) : x(x) {}
+	explicit TestComponent(int x) : x(x) {}
 };
 
 class AnotherComponent : public IComponent {
   public:
 	int x;
 
-	AnotherComponent(int x) : x(x) {}
+	explicit AnotherComponent(int x) : x(x) {}
 };
 
 class YetAnotherComponent : public IComponent {
   public:
 	int x;
 
-	YetAnotherComponent(int x) : x(x) {}
+	explicit YetAnotherComponent(int x) : x(x) {}
 };
 
 class OneMoreComponent : public IComponent {
   public:
 	int x;
 
-	OneMoreComponent(int x) : x(x) {}
+	explicit OneMoreComponent(int x) : x(x) {}
 };
 
 TEST_CASE("signature") {

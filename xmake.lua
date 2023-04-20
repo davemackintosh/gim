@@ -1,6 +1,6 @@
 add_requires("vcpkg::doctest", "vcpkg::vulkan-hpp")
 add_requires("vulkansdk", { system = true })
-add_requires("glslang", "spirv-tools")
+add_requires("glslang")
 add_requires("vcpkg::sdl2 2.24.0", {
 	configs = {
 		features = {
@@ -39,7 +39,7 @@ remove_files("src/*/test_*.cpp", "src/*/platforms/*.cpp")
 add_files(string.format("src/platforms/%s.cpp", is_plat("windows") and "windows" or "linux"))
 add_files("shaders/*.vert", "shaders/*.frag", "shaders/*.comp")
 
-add_packages("glslang", "spirv-tools", "vulkansdk", "vulkan-hpp", "vcpkg::sdl2")
+add_packages("glslang", "vulkansdk", "vulkan-hpp", "vcpkg::sdl2")
 
 
 target("test_gim")

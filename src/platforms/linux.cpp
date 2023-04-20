@@ -65,7 +65,7 @@ struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
 
-	bool isComplete() {
+	[[nodiscard]] bool isComplete() const {
 		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
 };
@@ -121,10 +121,10 @@ class HelloTriangleApplication {
 	}
 
   private:
-	SDL_Window *window;
+	SDL_Window *window{};
 
 	vk::UniqueInstance instance;
-	VkDebugUtilsMessengerEXT callback;
+	VkDebugUtilsMessengerEXT callback{};
 	vk::SurfaceKHR surface;
 
 	vk::PhysicalDevice physicalDevice;
@@ -171,7 +171,6 @@ class HelloTriangleApplication {
 
 	void initVulkan() {
 		createInstance();
-		setupDebugCallback();
 		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
@@ -179,7 +178,7 @@ class HelloTriangleApplication {
 		createImageViews();
 		createRenderPass();
 		createGraphicsPipeline();
-		createFramebuffers();
+		createFrameBuffers();
 		createCommandPool();
 		createVertexBuffer();
 		createCommandBuffers();
@@ -200,6 +199,14 @@ class HelloTriangleApplication {
 
 			drawFrame();
 		}
+		auto waitForFences =
+			device->waitForFences(1, &inFlightFences[currentFrame], VK_TRUE,
+								  std::numeric_limits<uint64_t>::max());
+
+		if (waitForFences != vk::Result::eSuccess) {
+			std::cout << "failed to wait for fences!" << std::endl;
+		}
+
 		device->waitIdle();
 	}
 
@@ -210,7 +217,7 @@ class HelloTriangleApplication {
 
 		device->freeCommandBuffers(commandPool, commandBuffers);
 
-		device->destroyPipeline(*graphicsPipeline.get());
+		device->destroyPipeline(*graphicsPipeline);
 		device->destroyPipelineLayout(pipelineLayout);
 		device->destroyRenderPass(renderPass);
 
@@ -225,6 +232,8 @@ class HelloTriangleApplication {
 		// NOTE: instance destruction is handled by UniqueInstance, same for
 		// device
 
+		// Wait for all frames to finish before destroying resources.
+		device->waitIdle();
 		cleanupSwapChain();
 
 		device->destroyBuffer(vertexBuffer);
@@ -264,12 +273,12 @@ class HelloTriangleApplication {
 		createImageViews();
 		createRenderPass();
 		createGraphicsPipeline();
-		createFramebuffers();
+		createFrameBuffers();
 		createCommandBuffers();
 	}
 
 	void createInstance() {
-		if (enableValidationLayers && !checkValidationLayerSupport()) {
+		if (!checkValidationLayerSupport()) {
 			throw std::runtime_error(
 				"validation layers requested, but not available!");
 		}
@@ -300,37 +309,14 @@ class HelloTriangleApplication {
 			createInfo.enabledLayerCount =
 				static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
-			createInfo.pNext =
-				(VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
+			createInfo.pNext = &debugCreateInfo;
 		}
 
 		try {
 			instance = vk::createInstanceUnique(createInfo, nullptr);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create instance!");
 		}
-	}
-
-	void setupDebugCallback() {
-		if (!enableValidationLayers)
-			return;
-
-		// NOTE: Vulkan-hpp has methods for this, but they trigger linking
-		// errors...
-		// instance->createDebugUtilsMessengerEXT(createInfo);
-		// instance->createDebugUtilsMessengerEXTUnique(createInfo);
-
-		// NOTE: reinterpret_cast is also used by vulkan.hpp internally for all
-		// these structs
-		//		if (CreateDebugUtilsMessengerEXT(
-		//				*instance,
-		//				reinterpret_cast<const
-		// VkDebugUtilsMessengerCreateInfoEXT
-		//*>( 					&createInfo), 				nullptr, &callback)
-		//!= VK_SUCCESS) { 			throw std::runtime_error("failed to set up
-		// debug
-		// callback!");
-		//		}
 	}
 
 	void createSurface() {
@@ -342,14 +328,14 @@ class HelloTriangleApplication {
 
 	void pickPhysicalDevice() {
 		auto devices = instance->enumeratePhysicalDevices();
-		if (devices.size() == 0) {
+		if (devices.empty()) {
 			throw std::runtime_error(
 				"failed to find GPUs with Vulkan support!");
 		}
 
-		for (const auto &device : devices) {
-			if (isDeviceSuitable(device)) {
-				physicalDevice = device;
+		for (const auto &maybeSuitableDevice : devices) {
+			if (isDeviceSuitable(maybeSuitableDevice)) {
+				physicalDevice = maybeSuitableDevice;
 				break;
 			}
 		}
@@ -363,17 +349,19 @@ class HelloTriangleApplication {
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = {
+
+		std ::set<uint32_t> uniqueQueueFamilies = {
 			indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 		float queuePriority = 1.0f;
 
-		for (uint32_t queueFamily : uniqueQueueFamilies) {
-			queueCreateInfos.push_back({vk::DeviceQueueCreateFlags(),
-										queueFamily,
-										1, // queueCount
-										&queuePriority});
-		}
+		std::transform(uniqueQueueFamilies.begin(), uniqueQueueFamilies.end(),
+					   std::back_inserter(queueCreateInfos),
+					   [&](uint32_t queueFamily) {
+						   return vk::DeviceQueueCreateInfo(
+							   vk::DeviceQueueCreateFlags(), queueFamily, 1,
+							   &queuePriority);
+					   });
 
 		auto deviceFeatures = vk::PhysicalDeviceFeatures();
 		auto createInfo =
@@ -393,7 +381,7 @@ class HelloTriangleApplication {
 
 		try {
 			device = physicalDevice.createDeviceUnique(createInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create logical device!");
 		}
 
@@ -445,7 +433,7 @@ class HelloTriangleApplication {
 
 		try {
 			swapChain = device->createSwapchainKHR(createInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create swap chain!");
 		}
 
@@ -476,7 +464,7 @@ class HelloTriangleApplication {
 
 			try {
 				swapChainImageViews[i] = device->createImageView(createInfo);
-			} catch (vk::SystemError err) {
+			} catch (vk::SystemError &err) {
 				throw std::runtime_error("failed to create image views!");
 			}
 		}
@@ -523,7 +511,7 @@ class HelloTriangleApplication {
 
 		try {
 			renderPass = device->createRenderPass(renderPassInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create render pass!");
 		}
 	}
@@ -610,7 +598,7 @@ class HelloTriangleApplication {
 
 		try {
 			pipelineLayout = device->createPipelineLayout(pipelineLayoutInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
@@ -631,12 +619,12 @@ class HelloTriangleApplication {
 		try {
 			graphicsPipeline = std::make_shared<vk::Pipeline>(
 				device->createGraphicsPipeline(nullptr, pipelineInfo).value);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 	}
 
-	void createFramebuffers() {
+	void createFrameBuffers() {
 		swapChainFramebuffers.resize(swapChainImageViews.size());
 
 		for (size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -653,7 +641,7 @@ class HelloTriangleApplication {
 			try {
 				swapChainFramebuffers[i] =
 					device->createFramebuffer(framebufferInfo);
-			} catch (vk::SystemError err) {
+			} catch (vk::SystemError &err) {
 				throw std::runtime_error("failed to create framebuffer!");
 			}
 		}
@@ -667,7 +655,7 @@ class HelloTriangleApplication {
 
 		try {
 			commandPool = device->createCommandPool(poolInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create command pool!");
 		}
 	}
@@ -708,7 +696,7 @@ class HelloTriangleApplication {
 
 		try {
 			buffer = device->createBuffer(bufferInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create buffer!");
 		}
 
@@ -722,7 +710,7 @@ class HelloTriangleApplication {
 
 		try {
 			bufferMemory = device->allocateMemory(allocInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to allocate buffer memory!");
 		}
 
@@ -787,7 +775,7 @@ class HelloTriangleApplication {
 
 		try {
 			commandBuffers = device->allocateCommandBuffers(allocInfo);
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
 
@@ -797,7 +785,7 @@ class HelloTriangleApplication {
 
 			try {
 				commandBuffers[i].begin(beginInfo);
-			} catch (vk::SystemError err) {
+			} catch (vk::SystemError &err) {
 				throw std::runtime_error(
 					"failed to begin recording command buffer!");
 			}
@@ -819,7 +807,7 @@ class HelloTriangleApplication {
 											  vk::SubpassContents::eInline);
 
 			commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics,
-										   *graphicsPipeline.get());
+										   *graphicsPipeline);
 
 			vk::Buffer vertexBuffers[] = {vertexBuffer};
 			vk::DeviceSize offsets[] = {0};
@@ -832,7 +820,7 @@ class HelloTriangleApplication {
 
 			try {
 				commandBuffers[i].end();
-			} catch (vk::SystemError err) {
+			} catch (vk::SystemError &err) {
 				throw std::runtime_error("failed to record command buffer!");
 			}
 		}
@@ -850,15 +838,20 @@ class HelloTriangleApplication {
 				inFlightFences[i] =
 					device->createFence({vk::FenceCreateFlagBits::eSignaled});
 			}
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error(
 				"failed to create synchronization objects for a frame!");
 		}
 	}
 
 	void drawFrame() {
-		device->waitForFences(1, &inFlightFences[currentFrame], VK_TRUE,
-							  std::numeric_limits<uint64_t>::max());
+		auto waitResult =
+			device->waitForFences(1, &inFlightFences[currentFrame], VK_TRUE,
+								  std::numeric_limits<uint64_t>::max());
+
+		if (waitResult != vk::Result::eSuccess) {
+			std::cout << "failed to wait for fences!" << std::endl;
+		}
 
 		uint32_t imageIndex;
 		try {
@@ -866,10 +859,10 @@ class HelloTriangleApplication {
 				swapChain, std::numeric_limits<uint64_t>::max(),
 				imageAvailableSemaphores[currentFrame], nullptr);
 			imageIndex = result.value;
-		} catch (vk::OutOfDateKHRError err) {
+		} catch (vk::OutOfDateKHRError &err) {
 			recreateSwapChain();
 			return;
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
 
@@ -891,11 +884,21 @@ class HelloTriangleApplication {
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		device->resetFences(1, &inFlightFences[currentFrame]);
+		auto fenceReset = device->resetFences(1, &inFlightFences[currentFrame]);
+		if (fenceReset != vk::Result::eSuccess) {
+			std::cout << "failed to reset fences!" << std::endl;
+		}
 
 		try {
 			graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
-		} catch (vk::SystemError err) {
+			// Wait for the fence to signal that command buffer has finished.
+			auto waitForFencesResult =
+				device->waitForFences(1, &inFlightFences[currentFrame], VK_TRUE,
+									  std::numeric_limits<uint64_t>::max());
+			if (waitForFencesResult != vk::Result::eSuccess) {
+				std::cout << "failed to wait for fences!" << std::endl;
+			}
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 
@@ -911,14 +914,13 @@ class HelloTriangleApplication {
 		vk::Result resultPresent;
 		try {
 			resultPresent = presentQueue.presentKHR(presentInfo);
-		} catch (vk::OutOfDateKHRError err) {
+		} catch (vk::OutOfDateKHRError &err) {
 			resultPresent = vk::Result::eErrorOutOfDateKHR;
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to present swap chain image!");
 		}
 
-		if (resultPresent == vk::Result::eSuboptimalKHR ||
-			resultPresent == vk::Result::eSuboptimalKHR || framebufferResized) {
+		if (resultPresent == vk::Result::eSuboptimalKHR || framebufferResized) {
 			framebufferResized = false;
 			recreateSwapChain();
 			return;
@@ -932,12 +934,12 @@ class HelloTriangleApplication {
 			return device->createShaderModuleUnique(
 				{vk::ShaderModuleCreateFlags(), code.size(),
 				 reinterpret_cast<const uint32_t *>(code.data())});
-		} catch (vk::SystemError err) {
+		} catch (vk::SystemError &err) {
 			throw std::runtime_error("failed to create shader module!");
 		}
 	}
 
-	vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
+	static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
 		const std::vector<vk::SurfaceFormatKHR> &availableFormats) {
 		if (availableFormats.size() == 1 &&
 			availableFormats[0].format == vk::Format::eUndefined) {
@@ -945,19 +947,18 @@ class HelloTriangleApplication {
 					vk::ColorSpaceKHR::eSrgbNonlinear};
 		}
 
-		for (const auto &availableFormat : availableFormats) {
-			if (availableFormat.format == vk::Format::eB8G8R8A8Unorm &&
-				availableFormat.colorSpace ==
-					vk::ColorSpaceKHR::eSrgbNonlinear) {
-				return availableFormat;
-			}
-		}
-
-		return availableFormats[0];
+		// Find the available format using std::find_if.
+		return *std::find_if(availableFormats.begin(), availableFormats.end(),
+							 [](const vk::SurfaceFormatKHR &availableFormat) {
+								 return availableFormat.format ==
+											vk::Format::eB8G8R8A8Unorm &&
+										availableFormat.colorSpace ==
+											vk::ColorSpaceKHR::eSrgbNonlinear;
+							 });
 	}
 
-	vk::PresentModeKHR chooseSwapPresentMode(
-		const std::vector<vk::PresentModeKHR> availablePresentModes) {
+	static vk::PresentModeKHR chooseSwapPresentMode(
+		const std::vector<vk::PresentModeKHR> &availablePresentModes) {
 		vk::PresentModeKHR bestMode = vk::PresentModeKHR::eFifo;
 
 		for (const auto &availablePresentMode : availablePresentModes) {
@@ -997,24 +998,24 @@ class HelloTriangleApplication {
 	}
 
 	SwapChainSupportDetails
-	querySwapChainSupport(const vk::PhysicalDevice &device) {
+	querySwapChainSupport(const vk::PhysicalDevice &targetDevice) {
 		SwapChainSupportDetails details;
-		details.capabilities = device.getSurfaceCapabilitiesKHR(surface);
-		details.formats = device.getSurfaceFormatsKHR(surface);
-		details.presentModes = device.getSurfacePresentModesKHR(surface);
+		details.capabilities = targetDevice.getSurfaceCapabilitiesKHR(surface);
+		details.formats = targetDevice.getSurfaceFormatsKHR(surface);
+		details.presentModes = targetDevice.getSurfacePresentModesKHR(surface);
 
 		return details;
 	}
 
-	bool isDeviceSuitable(const vk::PhysicalDevice &device) {
-		QueueFamilyIndices indices = findQueueFamilies(device);
+	bool isDeviceSuitable(const vk::PhysicalDevice &targetDevice) {
+		QueueFamilyIndices indices = findQueueFamilies(targetDevice);
 
-		bool extensionsSupported = checkDeviceExtensionSupport(device);
+		bool extensionsSupported = checkDeviceExtensionSupport(targetDevice);
 
 		bool swapChainAdequate = false;
 		if (extensionsSupported) {
 			SwapChainSupportDetails swapChainSupport =
-				querySwapChainSupport(device);
+				querySwapChainSupport(targetDevice);
 			swapChainAdequate = !swapChainSupport.formats.empty() &&
 								!swapChainSupport.presentModes.empty();
 		}
@@ -1022,7 +1023,7 @@ class HelloTriangleApplication {
 		return indices.isComplete() && extensionsSupported && swapChainAdequate;
 	}
 
-	bool checkDeviceExtensionSupport(const vk::PhysicalDevice &device) {
+	static bool checkDeviceExtensionSupport(const vk::PhysicalDevice &device) {
 		std::set<std::string> requiredExtensions(deviceExtensions.begin(),
 												 deviceExtensions.end());
 
@@ -1034,10 +1035,11 @@ class HelloTriangleApplication {
 		return requiredExtensions.empty();
 	}
 
-	QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device) {
+	QueueFamilyIndices
+	findQueueFamilies(vk::PhysicalDevice targetPhysicalDevice) {
 		QueueFamilyIndices indices;
 
-		auto queueFamilies = device.getQueueFamilyProperties();
+		auto queueFamilies = targetPhysicalDevice.getQueueFamilyProperties();
 
 		int i = 0;
 		for (const auto &queueFamily : queueFamilies) {
@@ -1047,7 +1049,7 @@ class HelloTriangleApplication {
 			}
 
 			if (queueFamily.queueCount > 0 &&
-				device.getSurfaceSupportKHR(i, surface)) {
+				targetPhysicalDevice.getSurfaceSupportKHR(i, surface)) {
 				indices.presentFamily = i;
 			}
 
@@ -1074,7 +1076,7 @@ class HelloTriangleApplication {
 		return extensions;
 	}
 
-	bool checkValidationLayerSupport() {
+	static bool checkValidationLayerSupport() {
 		auto availableLayers = vk::enumerateInstanceLayerProperties();
 		for (const char *layerName : validationLayers) {
 			bool layerFound = false;
