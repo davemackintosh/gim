@@ -4,7 +4,7 @@ clean:
 
 .PHONY: compile_commands.json
 compile_commands.json:
-	@xmake project --yes -k compile_commands
+	xmake project --yes -k compile_commands
 
 .PHONY: debug
 debug: compile_commands.json
