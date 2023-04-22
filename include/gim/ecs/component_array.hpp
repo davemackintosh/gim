@@ -38,7 +38,7 @@ class ComponentArray : public IComponentArray {
 
   public:
 	ComponentArray() = default;
-	~ComponentArray() = default;
+	~ComponentArray() override = default;
 
 	void insertData(Entity entity, std::shared_ptr<ComponentType> component) {
 		// Add the entity to the entity vector.
@@ -51,7 +51,7 @@ class ComponentArray : public IComponentArray {
 		// Find the index of the entity.
 		auto it = std::find(entities.begin(), entities.end(), entity);
 		// Get the index of the entity.
-		int64_t index = std::distance(entities.begin(), it);
+		auto index = std::distance(entities.begin(), it);
 
 		// Check if the index is valid.
 		if (index >= entities.size()) {

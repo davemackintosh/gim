@@ -13,7 +13,7 @@ class ECS {
 	std::shared_ptr<ComponentManager> componentManager =
 		std::make_shared<ComponentManager>();
 	std::shared_ptr<SystemManager> systemManager =
-		std::make_shared<SystemManager>();
+		std::make_shared<SystemManager>(componentManager);
 
   public:
 	auto createEntity() -> Entity { return entityManager->createEntity(); }

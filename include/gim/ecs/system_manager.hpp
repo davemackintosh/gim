@@ -1,11 +1,12 @@
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <gim/ecs/component_manager.hpp>
 #include <map>
 #include <memory>
 #include <string_view>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
 namespace gim::ecs {
@@ -45,7 +46,7 @@ class SystemManager {
 
   public:
 	explicit SystemManager(std::shared_ptr<ComponentManager> componentManager) {
-		this->componentManager = componentManager;
+		this->componentManager = std::move(componentManager);
 	}
 
 	template <System T> auto registerSystem() -> void {
@@ -55,8 +56,9 @@ class SystemManager {
 		systems.back()->setComponentManager(componentManager);
 	}
 
-	auto entitySignatureChanged(Entity entity,
-								std::shared_ptr<Signature> entitySignature)
+	auto
+	entitySignatureChanged(Entity entity,
+						   const std::shared_ptr<Signature> &entitySignature)
 		-> void {
 		for (auto const &system : systems) {
 			auto const &systemSignature = system->getSignature();

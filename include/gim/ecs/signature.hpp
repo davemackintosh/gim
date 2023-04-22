@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bits/ranges_algo.h>
 #include <cassert>
 #include <map>
 #include <memory>
@@ -41,16 +42,16 @@ class Signature {
 
 	auto empty() -> bool { return signature.empty(); }
 
-	auto subsetOf(std::shared_ptr<Signature> other) -> bool {
-		for (auto const &[key, value] : signature) {
-			if (other->signature.find(key) == other->signature.end()) {
+	auto subsetOf(const std::shared_ptr<Signature> &other) -> bool {
+		return std::ranges::all_of(signature, [&](auto const &pair) {
+			if (other->signature.find(pair.first) == other->signature.end()) {
 				return false;
 			}
-			if (value != other->signature.at(key)) {
+			if (pair.second != other->signature.at(pair.first)) {
 				return false;
 			}
-		}
-		return true;
+			return true;
+		});
 	}
 
 	auto operator&(Signature const &other) -> Signature {
@@ -65,24 +66,21 @@ class Signature {
 	}
 
 	auto operator==(Signature const &other) -> bool {
-		for (auto const &[key, value] : signature) {
-			if (other.signature.find(key) == other.signature.end()) {
+		return std::ranges::all_of(signature, [&](auto const &pair) {
+			if (other.signature.find(pair.first) == other.signature.end()) {
 				return false;
 			}
-			if (value != other.signature.at(key)) {
+			if (pair.second != other.signature.at(pair.first)) {
 				return false;
 			}
-		}
-		return true;
+			return true;
+		});
 	}
 
 	auto operator!=(Signature const &other) -> bool {
 		return !(*this == other);
 	}
 
-	auto operator=(Signature const &other) -> Signature & {
-		signature = other.signature;
-		return *this;
-	}
+	auto operator=(Signature const &other) -> Signature & = default;
 };
 } // namespace gim::ecs

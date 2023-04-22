@@ -65,8 +65,8 @@ template <int ECS_MAX_ENTITIES> class EntityManager {
 	 * @param entity The entity to set the signature of.
 	 * @param signature The signature to set.
 	 */
-	auto setSignature(Entity entity, std::shared_ptr<Signature> signature)
-		-> void {
+	auto setSignature(Entity entity,
+					  const std::shared_ptr<Signature> &signature) -> void {
 		// Set the signature of the entity.
 		signatures.at(entity) = signature;
 	};
