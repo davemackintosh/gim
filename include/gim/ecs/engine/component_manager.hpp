@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cassert>
-#include <gim/ecs/component_array.hpp>
+#include <gim/ecs/engine/component_array.hpp>
+#include <gim/ecs/engine/entity_manager.hpp>
 #include <map>
 #include <memory>
 #include <string_view>

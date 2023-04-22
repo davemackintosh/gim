@@ -62,14 +62,14 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance,
 	}
 }
 
-const std::vector<gim::renderers::vulkan::Vertex> vertices = {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
-
-auto gim::renderers::vulkan::VulkanApp::run() -> void {
+gim::renderers::vulkan::VulkanApp::VulkanApp(
+	std::vector<gim::ecs::components::Vertex> &vertices) {
+	this->vertices = &vertices;
 	initWindow();
 	initVulkan();
+}
+
+auto gim::renderers::vulkan::VulkanApp::run() -> void {
 	mainLoop();
 	cleanup();
 }
@@ -441,8 +441,10 @@ auto gim::renderers::vulkan::VulkanApp::createGraphicsPipeline() -> void {
 	vertexInputInfo.vertexBindingDescriptionCount = 0;
 	vertexInputInfo.vertexAttributeDescriptionCount = 0;
 
-	auto bindingDescription = Vertex::getBindingDescription();
-	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+	auto bindingDescription =
+		gim::ecs::components::Vertex::getBindingDescription();
+	auto attributeDescriptions =
+		gim::ecs::components::Vertex::getAttributeDescriptions();
 
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.vertexAttributeDescriptionCount =
@@ -568,7 +570,7 @@ auto gim::renderers::vulkan::VulkanApp::createCommandPool() -> void {
 }
 
 auto gim::renderers::vulkan::VulkanApp::createVertexBuffer() -> void {
-	vk::DeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+	vk::DeviceSize bufferSize = sizeof(vertices->at(0)) * vertices->size();
 
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingBufferMemory;
@@ -578,7 +580,7 @@ auto gim::renderers::vulkan::VulkanApp::createVertexBuffer() -> void {
 				 stagingBuffer, stagingBufferMemory);
 
 	void *data = device->mapMemory(stagingBufferMemory, 0, bufferSize);
-	memcpy(data, vertices.data(), (size_t)bufferSize);
+	memcpy(data, (void *)vertices->data(), (size_t)bufferSize);
 	device->unmapMemory(stagingBufferMemory);
 
 	createBuffer(bufferSize,
@@ -723,7 +725,8 @@ auto gim::renderers::vulkan::VulkanApp::createCommandBuffers() -> void {
 		vk::DeviceSize offsets[] = {0};
 		commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-		commandBuffers[i].draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		commandBuffers[i].draw(static_cast<uint32_t>(vertices->size()), 1, 0,
+							   0);
 
 		commandBuffers[i].endRenderPass();
 

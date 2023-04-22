@@ -1,14 +1,19 @@
 #pragma once
 
 #include <algorithm>
-#include <gim/ecs/entity_manager.hpp>
+#include <gim/ecs/engine/entity_manager.hpp>
 #include <memory>
 #include <vector>
 
 namespace gim::ecs {
 
-// A Component is just a placeholder class which is used to identify
-// a component type in the ComponentArray and ComponentManager.
+/**
+ * @brief An IComponent is just an interface which is used to identify a
+ * component type in the ComponentArray and ComponentManager.
+ * @note This is not a component, but an interface.
+ *
+ * There is no constructor for this class, because it is an interface.
+ */
 class IComponent {
   public:
 	virtual ~IComponent() = default;

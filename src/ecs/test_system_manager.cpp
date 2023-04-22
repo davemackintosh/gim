@@ -1,9 +1,9 @@
+#include "gim/ecs/engine/component_manager.hpp"
+#include "gim/ecs/engine/entity_manager.hpp"
+#include "gim/ecs/engine/system_manager.hpp"
+#include "gim/ecs/engine/testing.hpp"
 #include <doctest/doctest.h>
-#include <gim/ecs/component_manager.hpp>
 #include <gim/ecs/ecs.hpp>
-#include <gim/ecs/entity_manager.hpp>
-#include <gim/ecs/system_manager.hpp>
-#include <gim/ecs/testing.hpp>
 #include <memory>
 
 using namespace gim::ecs;

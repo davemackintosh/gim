@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cassert>
-#include <gim/ecs/component_manager.hpp>
+#include <gim/ecs/engine/component_manager.hpp>
+#include <gim/ecs/engine/entity_manager.hpp>
+#include <gim/ecs/engine/signature.hpp>
 #include <map>
 #include <memory>
 #include <string_view>

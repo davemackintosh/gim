@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include <gim/ecs/signature.hpp>
+#include <gim/ecs/engine/signature.hpp>
 #include <memory>
 
 namespace gim::ecs {

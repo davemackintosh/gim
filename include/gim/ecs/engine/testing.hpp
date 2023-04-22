@@ -1,8 +1,8 @@
 #pragma once
 
-#include <gim/ecs/component_manager.hpp>
-#include <gim/ecs/entity_manager.hpp>
-#include <gim/ecs/system_manager.hpp>
+#include "component_manager.hpp"
+#include "entity_manager.hpp"
+#include "system_manager.hpp"
 
 namespace gim::ecs::TESTING {
 class TestComponent : public IComponent {

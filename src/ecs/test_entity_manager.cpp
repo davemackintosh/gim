@@ -1,9 +1,9 @@
 #include "gim/ecs/ecs.hpp"
-#include "gim/ecs/signature.hpp"
+#include "gim/ecs/engine/component_array.hpp"
+#include "gim/ecs/engine/entity_manager.hpp"
+#include "gim/ecs/engine/signature.hpp"
+#include "gim/ecs/engine/testing.hpp"
 #include <doctest/doctest.h>
-#include <gim/ecs/component_array.hpp>
-#include <gim/ecs/entity_manager.hpp>
-#include <gim/ecs/testing.hpp>
 
 TEST_CASE("entity-manager") {
 	auto em = gim::ecs::EntityManager<10>();
