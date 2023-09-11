@@ -9,7 +9,7 @@ compile_commands.json:
 .PHONY: debug
 debug: compile_commands.json
 	xmake f -m debug
-	xmake build gim
+	xmake build -D gim
 
 .PHONY: build
 build:

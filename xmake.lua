@@ -1,12 +1,12 @@
 add_requires("vcpkg::doctest", "vcpkg::vulkan-hpp")
 add_requires("vulkansdk", { system = true })
 add_requires("glslang")
-add_requires("vcpkg::sdl2 2.24.0", {
+add_requires("vcpkg::sdl2 2.26.4", {
 	configs = {
 		features = {
-			"x11",
+			-- "x11",
 			"vulkan",
-			"wayland"
+			-- "wayland"
 		}
 	}
 })
@@ -24,6 +24,7 @@ target("gim")
 set_kind("binary")
 set_symbols("debug")
 set_optimize("none")
+add_vectorexts("all")
 
 local platform = is_plat("windows") and "windows" or is_plat("linux") and "linux" or is_plat("macosx") and "macos" or
 	"unknown"
@@ -40,7 +41,6 @@ add_files(string.format("src/platforms/%s.cpp", is_plat("windows") and "windows"
 add_files("shaders/*.vert", "shaders/*.frag", "shaders/*.comp")
 
 add_packages("glslang", "vulkansdk", "vulkan-hpp", "vcpkg::sdl2")
-
 
 target("test_gim")
 set_kind("binary")

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bits/ranges_algo.h>
+#include <algorithm>
 #include <cassert>
 #include <map>
 #include <memory>
