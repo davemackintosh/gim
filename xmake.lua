@@ -1,17 +1,23 @@
-add_requires("vcpkg::doctest", "vcpkg::vulkan-hpp")
-add_requires("vulkansdk", { system = true })
+add_requires("vcpkg::doctest", "vcpkg::vulkan-hpp", "vcpkg::glm")
+add_requires("vulkan", { system = true })
 add_requires("glslang")
 add_requires("vcpkg::sdl2 2.26.4", {
 	configs = {
+		shared = true,
 		features = {
 			"vulkan",
+		},
+		cxflags = {
+			"SDL_FRAMEWORK_COREVIDEO",
+			"SDL_FRAMEWORK_COREAUDIO",
+			"SDL_FRAMEWORK_FOUNDATION",
+			"SDL_FRAMEWORK_COCOA",
 		}
 	}
 })
 
 set_languages("c99", "c++20")
 set_warnings("all")
-set_toolset("clang")
 if not is_mode("release") then
 	-- Enable address sanitizer.
 	add_cxflags("-fsanitize=address", "-ftrapv")
@@ -39,8 +45,7 @@ remove_files("src/*/test_*.cpp", "src/*/platforms/*.cpp")
 add_files(string.format("src/platforms/%s.cpp", is_plat("windows") and "windows" or "linux"))
 add_files("shaders/*.vert", "shaders/*.frag", "shaders/*.comp")
 
-add_packages("glslang", "vulkansdk", "vulkan-hpp", "vcpkg::sdl2")
-add_frameworks("Cocoa", "CoreFoundation", "Foundation", "GameController", "CoreAudio", "CoreAudioKit")
+add_packages("vcpkg::sdl2", "glslang", "vulkan", "vcpkg::vulkan-hpp", "vcpkg::glm")
 
 target("test_gim")
 set_kind("binary")

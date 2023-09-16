@@ -13,7 +13,8 @@ debug: compile_commands.json
 
 .PHONY: build
 build:
-	xmake build gim
+	cmake --debug-output -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+	cmake --build build
 
 .PHONY: run
 run: build

@@ -70,6 +70,14 @@ tags
 # Persistent undo
 [._]*.un~
 
+### vcpkg ###
+# Vcpkg
+
+vcpkg-manifest-install.log
+
+## Manifest Mode
+vcpkg_installed/
+
 # End of https://www.toptal.com/developers/gitignore/api/c++,vim,linux
 compile_commands.json
 .xmake
