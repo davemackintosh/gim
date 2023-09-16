@@ -9,28 +9,29 @@ project(
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # SOURCES
-file(
-  GLOB_RECURSE SOURCES
-  RELATIVE ${PROJECT_SOURCE_DIR}
-  "src/*.cpp")
+set(SOURCES ./src/platforms/linux.cpp ./src/vulkan/vulkan.cpp)
 file(
   GLOB_RECURSE HEADERS
   RELATIVE ${PROJECT_SOURCE_DIR}
   "include/*.hpp")
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADERS})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+add_executable(${PROJECT_NAME} ${SOURCES})
+include_directories(./include)
 
 # DEPENDENCIES
+find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_path(VULKAN_HPP_INCLUDE_DIRS "vulkan/vulkan.hpp")
 
 # LINKER
-target_include_directories(${PROJECT_NAME} PRIVATE ${VULKAN_HPP_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${VULKAN_HPP_INCLUDE_DIRS}
+                                                   ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(
   ${PROJECT_NAME}
   PRIVATE glm::glm $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
-          $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>)
+          $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+          Vulkan::Vulkan)
