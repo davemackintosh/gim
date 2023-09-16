@@ -84,3 +84,5 @@ compile_commands.json
 .cache
 build
 .idea
+cmake-build-debug
+.vscode

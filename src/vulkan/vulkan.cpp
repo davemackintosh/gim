@@ -27,9 +27,13 @@ const std::vector<const char *> validationLayers = {
 
 const std::vector<const char *> deviceExtensions = {
 #ifdef __APPLE__
-    VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    "VK_KHR_portability_subset",
+#else
+    VK_KHR_SURFACE_EXTENSION_NAME,
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
 #endif
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+};
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -946,6 +950,7 @@ auto gim::renderers::vulkan::VulkanApp::checkDeviceExtensionSupport(
                                              deviceExtensions.end());
 
     for (const auto &extension : device.enumerateDeviceExtensionProperties()) {
+        std::cout << (extension.extensionName) << std::endl;
         requiredExtensions.erase(extension.extensionName);
     }
 
@@ -991,7 +996,7 @@ auto gim::renderers::vulkan::VulkanApp::getRequiredExtensions()
     std::vector<const char *> extensions(sdlExtensions.begin(),
                                          sdlExtensions.end());
 
-    extensions.emplace_back("VK_KHR_portability_enumeration");
+    extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
     return extensions;
 }
