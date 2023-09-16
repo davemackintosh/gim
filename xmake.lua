@@ -4,12 +4,11 @@ add_requires("glslang")
 add_requires("vcpkg::sdl2 2.26.4", {
 	configs = {
 		features = {
-			-- "x11",
 			"vulkan",
-			-- "wayland"
 		}
 	}
 })
+
 set_languages("c99", "c++20")
 set_warnings("all")
 set_toolset("clang")
@@ -41,6 +40,7 @@ add_files(string.format("src/platforms/%s.cpp", is_plat("windows") and "windows"
 add_files("shaders/*.vert", "shaders/*.frag", "shaders/*.comp")
 
 add_packages("glslang", "vulkansdk", "vulkan-hpp", "vcpkg::sdl2")
+add_frameworks("Cocoa", "CoreFoundation", "Foundation", "GameController", "CoreAudio", "CoreAudioKit")
 
 target("test_gim")
 set_kind("binary")

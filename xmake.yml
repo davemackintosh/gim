@@ -1,0 +1,121 @@
+---
+base: "lua53"
+
+globals:
+  target:
+    args:
+      - type: string
+
+  set_kind:
+    args:
+      - type: ["static", "binary", "shared"]
+
+  add_includedirs:
+    args:
+      - type: ...
+
+  add_files:
+    args:
+      - type: ...
+
+  add_headerfiles:
+    args:
+      - type: ...
+
+  includes:
+    args:
+      - type: string
+
+  set_project:
+    args:
+      - type: string
+
+  set_version:
+    args:
+      - type: string
+
+  set_xmakever:
+    args:
+      - type: string
+
+  add_moduledirs:
+    args:
+      - type: ...
+
+  add_plugindirs:
+    args:
+      - type: ...
+
+  get_config:
+    args:
+      - type: string
+
+  set_config:
+    args:
+      - type: string
+      - type: string
+
+  add_deps:
+    args:
+      - type: ...
+
+  add_requires:
+    args:
+      # TODO Add better support for the options as the second argument.
+      - type: ...
+
+  set_languages:
+    args:
+      # I should add more here but I only need 20 right now.
+      - type: ["c++20"]
+
+  import:
+    args:
+      - type: "..."
+
+  add_packages:
+    args:
+      - type: "..."
+
+  add_rules:
+    args:
+      - type: "..."
+
+  set_description:
+    args:
+      - type: string
+
+  target_end:
+    any: true
+
+  add_frameworks:
+    args:
+      - type: ...
+
+  add_mflags:
+    args:
+      - type: ...
+
+  add_defines:
+    args:
+      - type: string
+
+  is_plat:
+    args:
+      - type: string
+
+  is_mode:
+    args:
+      - type: string
+
+  set_symbols:
+    args:
+      - type: string
+
+  set_optimize:
+    args:
+      - type: string
+
+  set_strip:
+    args:
+      - type: string
