@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1)
+include("./compileGLSL.cmake")
 
 project(
   arteeyes
@@ -11,6 +12,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# DEPENDENCIES
+find_package(Vulkan REQUIRED)
+find_package(glm REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
+find_path(VULKAN_HPP_INCLUDE_DIRS "vulkan/vulkan.hpp")
+
 # SOURCES
 set(SOURCES ./src/platforms/linux.cpp ./src/vulkan/vulkan.cpp)
 file(
@@ -19,13 +26,10 @@ file(
   "include/*.hpp")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-include_directories(./include)
+append_glsl_to_target(${PROJECT_SOURCE_DIR}/shaders/default.frag
+                      ${PROJECT_SOURCE_DIR}/shaders/default.vert)
 
-# DEPENDENCIES
-find_package(Vulkan REQUIRED)
-find_package(glm REQUIRED)
-find_package(SDL2 CONFIG REQUIRED)
-find_path(VULKAN_HPP_INCLUDE_DIRS "vulkan/vulkan.hpp")
+include_directories(./include)
 
 # LINKER
 target_include_directories(${PROJECT_NAME} PRIVATE ${VULKAN_HPP_INCLUDE_DIRS}
