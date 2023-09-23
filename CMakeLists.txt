@@ -3,9 +3,8 @@ include("./compileGLSL.cmake")
 
 project(
   arteeyes
-  VERSION 0.1.0 # https://semver.org/spec/v0.1.0.html
+  VERSION 0.1.0
   DESCRIPTION "Gim. I make gim."
-  # HOMEPAGE_URL ""
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)

@@ -6,59 +6,60 @@
 #include <map>
 #include <memory>
 #include <string_view>
+#include <typeinfo>
 
 namespace gim::ecs {
 class ComponentManager {
   private:
-	std::map<std::string_view, std::shared_ptr<IComponentArray>>
-		componentArrays;
+    std::map<std::string_view, std::shared_ptr<IComponentArray>>
+        componentArrays;
 
 #ifdef TEST
-	// In order to test the private methods, we need to make them
-	// public in the test environment.
+    // In order to test the private methods, we need to make them
+    // public in the test environment.
   public:
 #endif
-	template <typename T> auto getComponentArray() -> ComponentArray<T> * {
-		std::string_view typeName = typeid(T).name();
+    template <typename T> auto getComponentArray() -> ComponentArray<T> * {
+        std::string_view typeName = typeid(T).name();
 
-		assert(componentArrays.find(typeName) != componentArrays.end() &&
-			   "Component not registered before use.");
+        assert(componentArrays.find(typeName) != componentArrays.end() &&
+               "Component not registered before use.");
 
-		return std::static_pointer_cast<ComponentArray<T>>(
-				   componentArrays.at(typeName))
-			.get();
-	}
+        return std::static_pointer_cast<ComponentArray<T>>(
+                   componentArrays.at(typeName))
+            .get();
+    }
 
   public:
-	ComponentManager() { componentArrays.clear(); }
-	template <typename T> auto registerComponent() -> void {
-		std::string_view typeName = typeid(T).name();
+    ComponentManager() { componentArrays.clear(); }
+    template <typename T> auto registerComponent() -> void {
+        std::string_view typeName = typeid(T).name();
 
-		assert(componentArrays.find(typeName) == componentArrays.end() &&
-			   "Registering component type more than once.");
+        assert(componentArrays.find(typeName) == componentArrays.end() &&
+               "Registering component type more than once.");
 
-		componentArrays.insert(
-			{typeName, std::make_shared<ComponentArray<T>>()});
-	}
+        componentArrays.insert(
+            {typeName, std::make_shared<ComponentArray<T>>()});
+    }
 
-	template <typename T>
-	auto addComponent(Entity entity, std::shared_ptr<T> component) -> void {
-		getComponentArray<T>()->insertData(entity, component);
-	}
+    template <typename T>
+    auto addComponent(Entity entity, std::shared_ptr<T> component) -> void {
+        getComponentArray<T>()->insertData(entity, component);
+    }
 
-	template <typename T> auto removeComponent(Entity entity) -> void {
-		getComponentArray<T>()->removeData(entity);
-	}
+    template <typename T> auto removeComponent(Entity entity) -> void {
+        getComponentArray<T>()->removeData(entity);
+    }
 
-	template <typename T>
-	auto getComponent(Entity entity) -> std::shared_ptr<T> {
-		return getComponentArray<T>()->getData(entity);
-	}
+    template <typename T>
+    auto getComponent(Entity entity) -> std::shared_ptr<T> {
+        return getComponentArray<T>()->getData(entity);
+    }
 
-	auto entityDestroyed(Entity entity) -> void {
-		for (auto const &[key, componentArray] : componentArrays) {
-			componentArray->entityDestroyed(entity);
-		}
-	}
+    auto entityDestroyed(Entity entity) -> void {
+        for (auto const &[key, componentArray] : componentArrays) {
+            componentArray->entityDestroyed(entity);
+        }
+    }
 };
 } // namespace gim::ecs

@@ -1,0 +1,93 @@
+#version 450
+
+layout(set = 0, binding = 0, rgba8) buffer InputBuffer {
+    vec4 sparseVoxelTree[]; // Sparse voxel octree data
+};
+
+layout(set = 0, binding = 1, rgba8) buffer OutputBuffer {
+    vec4 image[]; // Output image
+};
+
+const float MAX_MARCHING_STEPS = 200.0;
+const float MAX_DISTANCE = 100.0;
+
+// Voxel grid properties
+const float OCTREE_SIZE = 32.0;  // Assuming a 32x32x32 voxel grid
+const float OCTREE_SCALE = OCTREE_SIZE / 2.0;
+const vec3 OCTREE_MIN = vec3(-OCTREE_SCALE);
+const vec3 OCTREE_MAX = vec3(OCTREE_SCALE);
+
+// Function to sample voxel density from the octree
+float sampleDensity(vec3 rayOrigin, vec3 rayDir) {
+    // Ray-AABB intersection for octree bounds
+    vec3 invRayDir = 1.0 / rayDir;
+    vec3 tmin = (OCTREE_MIN - rayOrigin) * invRayDir;
+    vec3 tmax = (OCTREE_MAX - rayOrigin) * invRayDir;
+    vec3 t1 = min(tmin, tmax);
+    vec3 t2 = max(tmin, tmax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+
+    // If the ray misses the octree bounds, return 0.0 density
+    if (tNear > tFar || tFar < 0.0)
+        return 0.0;
+
+    // Perform octree traversal
+    float depth = tNear;
+    while (depth < tFar) {
+        vec3 samplePos = rayOrigin + rayDir * depth;
+
+        // Map samplePos to octree space and calculate index
+        ivec3 voxelIndex = ivec3((samplePos - OCTREE_MIN) / OCTREE_SCALE);
+
+        // Check if the voxel is outside the octree
+        if (any(lessThan(voxelIndex, ivec3(0))) || any(greaterThanEqual(voxelIndex, ivec3(OCTREE_SIZE))))
+            return 0.0;  // Outside the octree
+
+        // Access the octree node at the current voxel
+        int index = voxelIndex.x + voxelIndex.y * OCTREE_SIZE + voxelIndex.z * OCTREE_SIZE * OCTREE_SIZE;
+        vec4 octreeNode = sparseVoxelTree[index];
+
+        // If the octree node is non-empty, consider it solid
+        if (octreeNode != vec4(0.0))
+            return 1.0;
+
+        depth += 1.0 / OCTREE_SIZE;  // Move to the next voxel
+    }
+
+    return 0.0;  // No solid voxel found along the ray
+}
+
+void main() {
+    ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy); // Pixel coordinate
+
+    // Convert pixel coordinate to normalized device coordinate
+    vec2 ndc = (2.0 * vec2(pixelCoord) - vec2(imageSize)) / imageSize;
+    vec3 rayOrigin = cameraPosition;
+    vec3 rayDir = normalize(cameraRight * ndc.x + cameraUp * ndc.y + cameraFront * nearClip);
+
+    vec4 color = vec4(0.0);
+
+    float stepSize = MAX_DISTANCE / MAX_MARCHING_STEPS;
+    float currentDepth = 0.0;
+
+    for (float i = 0.0; i < MAX_MARCHING_STEPS; ++i) {
+        vec3 samplePos = rayOrigin + rayDir * currentDepth;
+        float density = sampleDensity(samplePos, rayDir);
+
+        if (density > 0.99) {
+            color = vec4(1.0);
+            break;
+        }
+
+        color += density * vec4(0.5, 0.8, 0.2, 1.0);
+
+        currentDepth += stepSize;
+        if (currentDepth >= MAX_DISTANCE)
+            break;
+    }
+
+    image[pixelCoord.x + pixelCoord.y * imageSize.x] = color;
+}
+
+#vim: ft=glsl
