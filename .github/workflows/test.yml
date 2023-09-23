@@ -30,10 +30,8 @@ jobs:
         vulkan-query-version: 1.3.204.0
         vulkan-components: Vulkan-Headers, Vulkan-Loader
         vulkan-use-cache: true
-    - uses: xmake-io/github-action-setup-xmake@v1
-      with:
-        xmake-version: latest
+    - uses: threeal/cmake-action@v1.3.0
     - name: Test
       run: make test
     - name: build release
-      run: xmake f -m release && make build
+      run: make build

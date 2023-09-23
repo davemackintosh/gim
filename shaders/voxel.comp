@@ -1,15 +1,22 @@
 #version 450
 
-layout(set = 0, binding = 0, rgba8) buffer InputBuffer {
+layout(set = 0, binding = 0) buffer InputBuffer {
     vec4 sparseVoxelTree[]; // Sparse voxel octree data
 };
 
-layout(set = 0, binding = 1, rgba8) buffer OutputBuffer {
+layout(set = 0, binding = 1) buffer OutputBuffer {
     vec4 image[]; // Output image
 };
 
 const float MAX_MARCHING_STEPS = 200.0;
 const float MAX_DISTANCE = 100.0;
+
+const float nearClip = 0.1;
+const vec2 imageSize = vec2(1920.0, 1080.0);
+const vec3 cameraPosition = vec3(0.0, 0.0, -10.0);
+const vec3 cameraUp = vec3(0.0, 1.0, 0.0);
+const vec3 cameraFront = vec3(0.0, 0.0, -1.0);
+const vec3 cameraRight = normalize(cross(cameraUp, cameraFront));
 
 // Voxel grid properties
 const float OCTREE_SIZE = 32.0;  // Assuming a 32x32x32 voxel grid
@@ -45,7 +52,7 @@ float sampleDensity(vec3 rayOrigin, vec3 rayDir) {
             return 0.0;  // Outside the octree
 
         // Access the octree node at the current voxel
-        int index = voxelIndex.x + voxelIndex.y * OCTREE_SIZE + voxelIndex.z * OCTREE_SIZE * OCTREE_SIZE;
+        int index = int(voxelIndex.x + voxelIndex.y * OCTREE_SIZE + voxelIndex.z * OCTREE_SIZE * OCTREE_SIZE);
         vec4 octreeNode = sparseVoxelTree[index];
 
         // If the octree node is non-empty, consider it solid
@@ -87,7 +94,6 @@ void main() {
             break;
     }
 
-    image[pixelCoord.x + pixelCoord.y * imageSize.x] = color;
+    image[int(pixelCoord.x + pixelCoord.y * imageSize.x)] = color;
 }
 
-#vim: ft=glsl

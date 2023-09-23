@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.22.1)
-include("./compileGLSL.cmake")
 
 project(
   arteeyes
   VERSION 0.1.0
-  DESCRIPTION "Gim. I make gim."
+  DESCRIPTION "Gim. I test gim."
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -12,13 +11,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # DEPENDENCIES
+find_package(doctest REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_path(VULKAN_HPP_INCLUDE_DIRS "vulkan/vulkan.hpp")
 
 # SOURCES
-set(SOURCES ./src/platforms/linux.cpp ./src/vulkan/vulkan.cpp)
+set(SOURCES ./test_main.cpp)
 file(
   GLOB_RECURSE HEADERS
   RELATIVE ${PROJECT_SOURCE_DIR}
