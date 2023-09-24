@@ -8,12 +8,12 @@ macro(append_glsl_to_target)
     set(SPIRV "${PROJECT_BINARY_DIR}/shaders/${FILE_NAME}.spv")
 
     add_custom_command(
-      OUTPUT ${SPIRV}
-      COMMAND cd
-      COMMAND "${CMAKE_COMMAND}" -E make_directory
-              "${PROJECT_BINARY_DIR}/shaders/"
-      COMMAND "${GLSL_VALIDATOR}" -V ${GLSL} -o ${SPIRV}
-      DEPENDS ${GLSL})
+            OUTPUT ${SPIRV}
+            COMMAND cd
+            COMMAND "${CMAKE_COMMAND}" -E make_directory
+            "${PROJECT_BINARY_DIR}/shaders/"
+            COMMAND "${GLSL_VALIDATOR}" -V ${GLSL} -o ${SPIRV}
+            DEPENDS ${GLSL})
     list(APPEND SPIRV_BINARY_FILES ${SPIRV})
   endforeach(GLSL)
 
@@ -22,10 +22,10 @@ macro(append_glsl_to_target)
   add_dependencies(${PROJECT_NAME} Shaders)
 
   add_custom_command(
-    TARGET ${PROJECT_NAME}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders/"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_BINARY_DIR}/shaders"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders")
+          TARGET ${PROJECT_NAME}
+          POST_BUILD
+          COMMAND ${CMAKE_COMMAND} -E make_directory
+          "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders/"
+          COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_BINARY_DIR}/shaders"
+          "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders")
 endmacro()

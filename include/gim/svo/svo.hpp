@@ -6,41 +6,41 @@
 
 class SimplexNoise {
   private:
-    FastNoiseLite noise;
+	FastNoiseLite noise;
 
   public:
-    SimplexNoise();
+	SimplexNoise();
 
-    [[nodiscard]] float getNoise(float x, float y, float z) const;
+	[[nodiscard]] float getNoise(float x, float y, float z) const;
 };
 
 struct Voxel {
-    glm::ivec3 position; // Voxel position in 3D space
-    float elevation;     // Elevation or height of the terrain at this voxel
-    // Add more voxel data as needed for terrain representation
+	glm::ivec3 position; // Voxel position in 3D space
+	float elevation;	 // Elevation or height of the terrain at this voxel
+	// Add more voxel data as needed for terrain representation
 };
 
 struct Node {
-    bool isLeaf;
-    Voxel voxel;
-    int childrenOffset; // Offset to children in the array
+	bool isLeaf;
+	Voxel voxel;
+	int childrenOffset; // Offset to children in the array
 };
 
 class SparseVoxelOctree {
   private:
-    std::vector<Node> nodes;
+	std::vector<Node> nodes;
 
   public:
-    SparseVoxelOctree() = default;
+	SparseVoxelOctree() = default;
 
-    // Function to insert a voxel into the octree
-    void insertVoxel(const Voxel &voxel);
+	// Function to insert a voxel into the octree
+	void insertVoxel(const Voxel &voxel);
 };
 
 class TerrainGenerator {
   private:
-    SimplexNoise noise;
+	SimplexNoise noise;
 
   public:
-    [[nodiscard]] float generateTerrainElevation(int x, int y, int z) const;
+	[[nodiscard]] float generateTerrainElevation(int x, int y, int z) const;
 };
