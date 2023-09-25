@@ -5,5 +5,5 @@
 #include <vector>
 
 std::vector<const char *> getRequiredExtensions(SDL_Window *window,
-                                                bool enableValidationLayers);
+												bool enableValidationLayers);
 bool checkValidationLayerSupport();

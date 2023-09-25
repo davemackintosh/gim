@@ -15,17 +15,48 @@ namespace gim::ecs {
 /**
  * @brief The ISystem class is the base class for all systems.
  */
-class ISystem {
+class SystemInterface {
   public:
-	virtual ~ISystem() = default;
-	virtual auto getSignature() -> std::shared_ptr<Signature> = 0;
-	virtual auto self() -> ISystem *const = 0;
+	virtual ~SystemInterface() = default;
+	virtual auto getSignature() -> std::shared_ptr<Signature>;
+	virtual auto self() -> SystemInterface *const = 0;
 	virtual void update() = 0;
 	virtual auto getEntities() -> std::vector<Entity> const & = 0;
 	virtual void insertEntity(Entity entity) = 0;
 	virtual void removeEntity(Entity entity) = 0;
 	virtual void setComponentManager(std::shared_ptr<ComponentManager> cm) = 0;
 	virtual auto getComponentManager() -> std::shared_ptr<ComponentManager> = 0;
+};
+
+class ISystem : public SystemInterface {
+  private:
+	std::vector<Entity> entities;
+	std::shared_ptr<ComponentManager> componentManager;
+
+  public:
+	auto self() -> ISystem *const override { return this; }
+
+	auto insertEntity(Entity entity) -> void override {
+		entities.push_back(entity);
+	}
+
+	auto removeEntity(Entity entity) -> void override {
+		entities.erase(std::remove(entities.begin(), entities.end(), entity),
+					   entities.end());
+	}
+
+	auto getEntities() -> std::vector<Entity> const & override {
+		return entities;
+	}
+
+	auto setComponentManager(std::shared_ptr<ComponentManager> cm)
+		-> void override {
+		componentManager = cm;
+	}
+
+	auto getComponentManager() -> std::shared_ptr<ComponentManager> override {
+		return componentManager;
+	}
 };
 
 template <class T>
