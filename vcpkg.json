@@ -4,6 +4,7 @@
 		"doctest",
 		"vk-bootstrap",
 		"glm",
+		"glog",
 		{
 			"name": "sdl2",
 			"features": [

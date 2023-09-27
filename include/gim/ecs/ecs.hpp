@@ -4,6 +4,7 @@
 #include "gim/ecs/engine/entity_manager.hpp"
 #include "gim/ecs/engine/system_manager.hpp"
 #include <memory>
+#include <utility>
 
 namespace gim::ecs {
 class ECS {
@@ -29,8 +30,9 @@ class ECS {
     }
 
     template <typename T>
-    auto addComponent(Entity entity, std::shared_ptr<T> component) -> void {
-        componentManager->addComponent(entity, component);
+    auto addComponent(Entity entity,
+                 std::shared_ptr<components::EngineState::Component> component) -> void {
+        componentManager->addComponent(entity, std::move(component));
         auto signature = entityManager->getSignature(entity);
         signature->set<T>();
         systemManager->entitySignatureChanged(entity, signature);
