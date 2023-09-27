@@ -1,26 +1,27 @@
 #include <cstdlib>
 #include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/ecs.hpp>
-#include <gim/vulkan/vulkan.hpp>
 #include <iostream>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
+#include <gim/ecs/systems/vulkan.hpp>
 
 int main() {
-	auto vertices = std::vector<gim::ecs::components::Vertex>(
-		{{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		 {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		 {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}});
-	auto ecs = std::make_shared<gim::ecs::ECS>();
-	auto app = std::make_unique<gim::renderers::vulkan::VulkanApp>(vertices);
+    auto ecs = std::make_shared<gim::ecs::ECS>();
+    auto verticesComponents = std::vector<gim::ecs::components::Vertex>(
+        {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+         {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+         {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}});
 
-	try {
-		app->run();
-	} catch (const std::exception &e) {
-		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
+    ecs->registerComponent<gim::ecs::components::Vertex>();
+    ecs->registerSystem<gim::ecs::systems::VulkanRendererSystem>();
 
-	return EXIT_SUCCESS;
+    try {
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }

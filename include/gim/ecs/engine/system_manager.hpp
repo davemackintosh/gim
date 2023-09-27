@@ -19,7 +19,6 @@ class ISystem {
   public:
 	virtual ~ISystem() = default;
 	virtual auto getSignature() -> std::shared_ptr<Signature> = 0;
-	virtual auto self() -> ISystem *const = 0;
 	virtual void update() = 0;
 	virtual auto getEntities() -> std::vector<Entity> const & = 0;
 	virtual void insertEntity(Entity entity) = 0;
@@ -75,7 +74,7 @@ class SystemManager {
 
 	auto update() -> void {
 		for (auto const &system : systems) {
-			system->self()->update();
+			system->update();
 		}
 	}
 };

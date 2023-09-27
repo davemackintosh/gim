@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.22.1)
+include(FetchContent)
 include("./compileGLSL.cmake")
 
 project(
@@ -15,14 +16,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
-find_path(VULKAN_HPP_INCLUDE_DIRS "vulkan/vulkan.hpp")
+find_package(vk-bootstrap CONFIG REQUIRED)
+find_path(VKB_INCLUDES VkBootstrap.h)
 
 # SOURCES
-set(SOURCES ./src/platforms/linux.cpp ./src/vulkan/vulkan.cpp)
-file(
-  GLOB_RECURSE HEADERS
-  RELATIVE ${PROJECT_SOURCE_DIR}
-  "include/*.hpp")
+set(SOURCES ./src/platforms/linux.cpp)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 append_glsl_to_target(
@@ -30,13 +28,11 @@ append_glsl_to_target(
   ${PROJECT_SOURCE_DIR}/shaders/default.frag
   ${PROJECT_SOURCE_DIR}/shaders/default.vert)
 
-include_directories(./include)
+include_directories(./include ${VK_INCLUDES})
 
 # LINKER
-target_include_directories(${PROJECT_NAME} PRIVATE ${VULKAN_HPP_INCLUDE_DIRS}
-                                                   ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(
   ${PROJECT_NAME}
   PRIVATE glm::glm $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
           $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-          Vulkan::Vulkan)
+          Vulkan::Vulkan vk-bootstrap::vk-bootstrap)
