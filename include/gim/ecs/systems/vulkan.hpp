@@ -7,10 +7,10 @@
 #include <SDL_surface.h>
 #include <VkBootstrap.h>
 #include <algorithm>
-#include <engine.hpp>
 #include <gim/ecs/components/engine-state.hpp>
 #include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/engine/system_manager.hpp>
+#include <gim/engine.hpp>
 #include <iostream>
 #include <memory>
 #include <utility>
@@ -120,9 +120,19 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     auto getWindow() -> SDL_Window * { return window; }
     auto getSurface() -> VkSurfaceKHR * { return surface; }
     auto getInstance() -> VkInstance * { return instance; }
-    auto createVulkanInstance() -> {
+    auto createVulkanInstance() -> void {
         vkb::InstanceBuilder instanceBuilder;
-        instanceBuilder.set_app_name(ENGINE_NAME);
+        auto builderResult = instanceBuilder.set_app_name(ENGINE_NAME)
+                                 .request_validation_layers(true)
+                                 .use_default_debug_messenger()
+                                 .require_api_version(1, 2, 0)
+                                 .build();
+
+        vkb::Instance vkbInstance{builderResult.value()};
+        instance = &vkbInstance.instance;
+    }
+    auto createSurface(SDL_Window *window) -> void {
+        SDLMustBeTrue(SDL_Vulkan_CreateSurface(window, *instance, surface));
     }
 
 #pragma mark - SDL
@@ -137,9 +147,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         SDLMustBeTrue(window != nullptr);
 
         VkSurfaceKHR rawSurface;
-        SDLMustBeTrue(
-            SDL_Vulkan_CreateSurface(window, instance.get(), &rawSurface));
-        surface = rawSurface;
+        SDLMustBeTrue(SDL_Vulkan_CreateSurface(window, *instance, &rawSurface));
+        surface = &rawSurface;
     }
 };
 } // namespace gim::ecs::systems

@@ -28,7 +28,7 @@ append_glsl_to_target(
   ${PROJECT_SOURCE_DIR}/shaders/default.frag
   ${PROJECT_SOURCE_DIR}/shaders/default.vert)
 
-include_directories(./include ${VK_INCLUDES})
+include_directories(./include ${VK_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}/include)
 configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
 
 # LINKER
