@@ -14,18 +14,15 @@ namespace gim::ecs {
  *
  * There is no constructor for this class, because it is an interface.
  */
-class IComponent {
-  public:
-	virtual ~IComponent() = default;
-};
+class IComponent {};
 
 class IComponentArray {
   public:
-	virtual ~IComponentArray() = default;
-	virtual void entityDestroyed(Entity entity) = 0;
-	// There is no need to virtualise the methods below, because
-	// they are not called from the base class pointer. This is
-	// just a way to satisfy the compiler.
+    virtual ~IComponentArray() = default;
+    virtual void entityDestroyed(Entity entity) = 0;
+    // There is no need to virtualise the methods below, because
+    // they are not called from the base class pointer. This is
+    // just a way to satisfy the compiler.
 };
 
 /**
@@ -35,50 +32,50 @@ class IComponentArray {
 template <typename ComponentType>
 class ComponentArray : public IComponentArray {
   private:
-	// Store the components in contiguous memory and make sure
-	// that the ownership of the component remains at the component source.
-	std::vector<std::shared_ptr<ComponentType>> components;
-	// Store the entities in contiguous memory.
-	std::vector<Entity> entities;
+    // Store the components in contiguous memory and make sure
+    // that the ownership of the component remains at the component source.
+    std::vector<std::shared_ptr<ComponentType>> components;
+    // Store the entities in contiguous memory.
+    std::vector<Entity> entities;
 
   public:
-	ComponentArray() = default;
-	~ComponentArray() override = default;
+    ComponentArray() = default;
+    ~ComponentArray() override = default;
 
-	void insertData(Entity entity, std::shared_ptr<ComponentType> component) {
-		// Add the entity to the entity vector.
-		entities.push_back(entity);
-		// Add the component to the component vector.
-		components.push_back(component);
-	}
+    void insertData(Entity entity, std::shared_ptr<ComponentType> component) {
+        // Add the entity to the entity vector.
+        entities.push_back(entity);
+        // Add the component to the component vector.
+        components.push_back(component);
+    }
 
-	std::shared_ptr<ComponentType> getData(Entity entity) {
-		// Find the index of the entity.
-		auto it = std::find(entities.begin(), entities.end(), entity);
-		// Get the index of the entity.
-		auto index = std::distance(entities.begin(), it);
+    std::shared_ptr<ComponentType> getData(Entity entity) {
+        // Find the index of the entity.
+        auto it = std::find(entities.begin(), entities.end(), entity);
+        // Get the index of the entity.
+        auto index = std::distance(entities.begin(), it);
 
-		// Check if the index is valid.
-		if (index >= entities.size()) {
-			return nullptr;
-		}
+        // Check if the index is valid.
+        if (index >= entities.size()) {
+            return nullptr;
+        }
 
-		// Return the component at the index.
-		return components[index];
-	}
+        // Return the component at the index.
+        return components[index];
+    }
 
-	void removeData(Entity entity) {
-		auto it = std::find(entities.begin(), entities.end(), entity);
-		auto index = std::distance(entities.begin(), it);
-		entities.erase(entities.begin() + index);
-		components.erase(components.begin() + index);
-	}
+    void removeData(Entity entity) {
+        auto it = std::find(entities.begin(), entities.end(), entity);
+        auto index = std::distance(entities.begin(), it);
+        entities.erase(entities.begin() + index);
+        components.erase(components.begin() + index);
+    }
 
-	void entityDestroyed(Entity entity) override {
-		auto it = std::find(entities.begin(), entities.end(), entity);
-		auto index = std::distance(entities.begin(), it);
-		entities.erase(entities.begin() + index);
-		components.erase(components.begin() + index);
-	}
+    void entityDestroyed(Entity entity) override {
+        auto it = std::find(entities.begin(), entities.end(), entity);
+        auto index = std::distance(entities.begin(), it);
+        entities.erase(entities.begin() + index);
+        components.erase(components.begin() + index);
+    }
 };
 } // namespace gim::ecs

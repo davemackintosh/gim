@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gim/ecs/engine/component_array.hpp"
 #include "gim/ecs/engine/component_manager.hpp"
 #include "gim/ecs/engine/entity_manager.hpp"
 #include "gim/ecs/engine/system_manager.hpp"
@@ -31,10 +32,8 @@ class ECS {
     }
 
     template <typename T>
-    auto addComponent(
-        Entity entity,
-        std::shared_ptr<gim::ecs::components::EngineState::Component> component)
-        -> void {
+    auto addComponent(Entity entity,
+                      std::shared_ptr<gim::ecs::IComponent> component) -> void {
         componentManager->addComponent(entity, std::move(component));
         auto signature = entityManager->getSignature(entity);
         signature->set<T>();

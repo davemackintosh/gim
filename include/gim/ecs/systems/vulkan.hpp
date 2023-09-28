@@ -29,23 +29,12 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     gim::vulkan::Instance instance;
 
   public:
-    VulkanRendererSystem() : instance(gim::vulkan::Instance()) {
-        // pickPhysicalDevice();
-        // createLogicalDevice();
-        // createSwapChain();
-        // createImageViews();
-        // createRenderPass();
-        // createGraphicsPipeline();
-        // createFrameBuffers();
-        // createCommandPool();
-        // createVertexBuffer();
-        // createCommandBuffers();
-        // createSyncObjects();
-    }
+    VulkanRendererSystem() : instance(gim::vulkan::Instance()) {}
 
     auto getSignature() -> std::shared_ptr<Signature> override {
         auto signature = std::make_shared<Signature>();
         signature->set<gim::ecs::components::EngineState::Component>();
+
         return signature;
     }
 
@@ -114,7 +103,5 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
         return std::make_pair(&*entity, component);
     }
-
-    auto pickPhysicalDevice() -> void {}
 };
 } // namespace gim::ecs::systems
