@@ -85,4 +85,3 @@ compile_commands.json
 build
 .idea
 cmake-build-debug
-.vscode
