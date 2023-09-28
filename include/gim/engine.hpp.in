@@ -3,6 +3,7 @@
 // This is automatically generated
 // clang-format off
 
+#define ENGINE_NAME ${PROJECT_NAME}
 #define ENGINE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR}
 #define ENGINE_VERSION_MINOR ${PROJECT_VERSION_MINOR}
 #define ENGINE_VERSION_PATCH ${PROJECT_VERSION_PATCH}

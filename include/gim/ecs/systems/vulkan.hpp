@@ -1,11 +1,13 @@
 #pragma once
 
 #include "gim/ecs/engine/entity_manager.hpp"
+#include "vulkan/vulkan_core.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <SDL_surface.h>
 #include <VkBootstrap.h>
 #include <algorithm>
+#include <engine.hpp>
 #include <gim/ecs/components/engine-state.hpp>
 #include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/engine/system_manager.hpp>
@@ -32,17 +34,13 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
     // Windowing.
     SDL_Window *window;
-    SDL_Surface *surface;
+    VkSurfaceKHR *surface;
+    VkInstance *instance;
 
   public:
     VulkanRendererSystem() {
-        SDLMustBeTrue(SDL_Init(SDL_INIT_EVERYTHING) == 0);
-
-        window = SDL_CreateWindow("Mountain", SDL_WINDOWPOS_CENTERED,
-                                  SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT,
-                                  SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
-                                      SDL_WINDOW_SHOWN);
-        SDLMustBeTrue(window != nullptr);
+        createVulkanInstance();
+        createWindow();
     }
 
     auto getSignature() -> std::shared_ptr<Signature> override {
@@ -70,6 +68,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             }
         }
     }
+
+#pragma mark - ECS
 
     auto insertEntity(Entity entity) -> void override {
         entities.push_back(entity);
@@ -113,6 +113,33 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         }
 
         return std::make_pair(&*entity, component);
+    }
+
+#pragma mark - Vulkan
+
+    auto getWindow() -> SDL_Window * { return window; }
+    auto getSurface() -> VkSurfaceKHR * { return surface; }
+    auto getInstance() -> VkInstance * { return instance; }
+    auto createVulkanInstance() -> {
+        vkb::InstanceBuilder instanceBuilder;
+        instanceBuilder.set_app_name(ENGINE_NAME);
+    }
+
+#pragma mark - SDL
+
+    auto createWindow() -> void {
+        SDLMustBeTrue(SDL_Init(SDL_INIT_EVERYTHING) == 0);
+
+        window = SDL_CreateWindow("Mountain", SDL_WINDOWPOS_CENTERED,
+                                  SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT,
+                                  SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
+                                      SDL_WINDOW_SHOWN);
+        SDLMustBeTrue(window != nullptr);
+
+        VkSurfaceKHR rawSurface;
+        SDLMustBeTrue(
+            SDL_Vulkan_CreateSurface(window, instance.get(), &rawSurface));
+        surface = rawSurface;
     }
 };
 } // namespace gim::ecs::systems
