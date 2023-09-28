@@ -14,22 +14,21 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # DEPENDENCIES
 find_package(Vulkan REQUIRED)
-find_package(glm REQUIRED)
+find_package(glm CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(vk-bootstrap CONFIG REQUIRED)
 find_path(VKB_INCLUDES VkBootstrap.h)
 
 # SOURCES
 set(SOURCES ./src/platforms/linux.cpp)
+include_directories(./include ${VK_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}/include)
+configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 append_glsl_to_target(
   ${PROJECT_SOURCE_DIR}/shaders/voxel.comp
   ${PROJECT_SOURCE_DIR}/shaders/default.frag
   ${PROJECT_SOURCE_DIR}/shaders/default.vert)
-
-include_directories(./include ${VK_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}/include)
-configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
 
 # LINKER
 target_link_libraries(

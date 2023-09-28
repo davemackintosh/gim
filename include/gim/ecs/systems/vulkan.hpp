@@ -11,20 +11,13 @@
 #include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/engine/system_manager.hpp>
 #include <gim/engine.hpp>
-#include <iostream>
+#include <gim/vulkan/init.hpp>
+#include <gim/vulkan/utils.hpp>
 #include <memory>
 #include <utility>
 
 namespace gim::ecs::systems {
 const int MAX_FRAMES_IN_FLIGHT = 2;
-const int WIDTH = 800;
-const int HEIGHT = 600;
-
-#define SDLMustBeTrue(expr)                                                    \
-    if (!(expr)) {                                                             \
-        std::cerr << "SDL Error: " << SDL_GetError() << std::endl;             \
-        exit(EXIT_FAILURE);                                                    \
-    }
 
 class VulkanRendererSystem : public gim::ecs::ISystem {
   private:
@@ -32,15 +25,22 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     std::vector<Entity> entities;
     std::shared_ptr<ComponentManager> componentManager;
 
-    // Windowing.
-    SDL_Window *window;
-    VkSurfaceKHR *surface;
-    VkInstance *instance;
+    // Vulkan.
+    gim::vulkan::Instance instance;
 
   public:
-    VulkanRendererSystem() {
-        createVulkanInstance();
-        createWindow();
+    VulkanRendererSystem() : instance(gim::vulkan::Instance()) {
+        // pickPhysicalDevice();
+        // createLogicalDevice();
+        // createSwapChain();
+        // createImageViews();
+        // createRenderPass();
+        // createGraphicsPipeline();
+        // createFrameBuffers();
+        // createCommandPool();
+        // createVertexBuffer();
+        // createCommandBuffers();
+        // createSyncObjects();
     }
 
     auto getSignature() -> std::shared_ptr<Signature> override {
@@ -115,40 +115,6 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         return std::make_pair(&*entity, component);
     }
 
-#pragma mark - Vulkan
-
-    auto getWindow() -> SDL_Window * { return window; }
-    auto getSurface() -> VkSurfaceKHR * { return surface; }
-    auto getInstance() -> VkInstance * { return instance; }
-    auto createVulkanInstance() -> void {
-        vkb::InstanceBuilder instanceBuilder;
-        auto builderResult = instanceBuilder.set_app_name(ENGINE_NAME)
-                                 .request_validation_layers(true)
-                                 .use_default_debug_messenger()
-                                 .require_api_version(1, 2, 0)
-                                 .build();
-
-        vkb::Instance vkbInstance{builderResult.value()};
-        instance = &vkbInstance.instance;
-    }
-    auto createSurface(SDL_Window *window) -> void {
-        SDLMustBeTrue(SDL_Vulkan_CreateSurface(window, *instance, surface));
-    }
-
-#pragma mark - SDL
-
-    auto createWindow() -> void {
-        SDLMustBeTrue(SDL_Init(SDL_INIT_EVERYTHING) == 0);
-
-        window = SDL_CreateWindow("Mountain", SDL_WINDOWPOS_CENTERED,
-                                  SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT,
-                                  SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
-                                      SDL_WINDOW_SHOWN);
-        SDLMustBeTrue(window != nullptr);
-
-        VkSurfaceKHR rawSurface;
-        SDLMustBeTrue(SDL_Vulkan_CreateSurface(window, *instance, &rawSurface));
-        surface = &rawSurface;
-    }
+    auto pickPhysicalDevice() -> void {}
 };
 } // namespace gim::ecs::systems

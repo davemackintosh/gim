@@ -4,7 +4,7 @@ clean:
 
 .PHONY: configure
 configure:
-	cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+	cmake --debug-output -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
 
 .PHONY: build
 build: configure
