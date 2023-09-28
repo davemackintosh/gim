@@ -4,7 +4,7 @@ include("./compileGLSL.cmake")
 
 project(
   arteeyes
-  VERSION 0.1.0
+  VERSION 0.1.0.0
   DESCRIPTION "Gim. I make gim."
   LANGUAGES CXX)
 
@@ -29,6 +29,7 @@ append_glsl_to_target(
   ${PROJECT_SOURCE_DIR}/shaders/default.vert)
 
 include_directories(./include ${VK_INCLUDES})
+configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
 
 # LINKER
 target_link_libraries(

@@ -2,7 +2,9 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
+#include <SDL_surface.h>
 #include <VkBootstrap.h>
+#include <gim/ecs/components/engine-state.hpp>
 #include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/engine/system_manager.hpp>
 
@@ -11,12 +13,16 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 
 class VulkanRendererSystem : public gim::ecs::ISystem {
   private:
+    // ECS.
     std::vector<Entity> entities;
     std::shared_ptr<ComponentManager> componentManager;
 
+    // Windowing.
+    SDL_Window *window;
+    SDL_Surface *surface;
+
   public:
-    VulkanRendererSystem() {
-    }
+    VulkanRendererSystem() {}
 
     auto getSignature() -> std::shared_ptr<Signature> override {
         auto signature = std::make_shared<Signature>();
@@ -38,12 +44,6 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
                 getComponentManager()
                     ->getComponent<
                         gim::ecs::components::EngineState::Component>(entity);
-        }
-
-        int res = draw_frame(init, render_data);
-        if (res != 0) {
-            std::cout << "failed to draw frame \n";
-            return -1;
         }
     }
 

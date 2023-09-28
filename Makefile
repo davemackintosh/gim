@@ -2,8 +2,11 @@
 clean:
 	cmake clean
 
+.PHONY: configure
+configure:
+	cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+
 .PHONY: build
-build:
-	cmake --debug-output -G Ninja -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+build: configure
 	cmake --build build 
 
