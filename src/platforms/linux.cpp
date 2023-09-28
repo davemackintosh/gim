@@ -1,9 +1,10 @@
+#include <SDL_video.h>
 #include <cstdlib>
-#include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/components/engine-state.hpp>
+#include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/ecs.hpp>
-#include <memory>
 #include <gim/ecs/systems/vulkan.hpp>
+#include <memory>
 
 int main() {
     auto ecs = std::make_shared<gim::ecs::ECS>();
@@ -17,13 +18,12 @@ int main() {
 
     // Track internal state.
     auto engineStateEntity = ecs->createEntity();
-    auto engineState = std::make_shared<gim::ecs::components::EngineState::Component>();
-    ecs->addComponent<gim::ecs::components::EngineState::Component>(engineStateEntity, engineState);
+    auto engineState =
+        std::make_shared<gim::ecs::components::EngineState::Component>();
+    ecs->addComponent<gim::ecs::components::EngineState::Component>(
+        engineStateEntity, engineState);
 
-    // Start the engine.
-    engineState->state = gim::ecs::components::EngineState::Running;
-
-    while (engineState->state == gim::ecs::components::EngineState::Running) {
+    while (engineState->state != gim::ecs::components::EngineState::Quitting) {
         ecs->update();
     }
 

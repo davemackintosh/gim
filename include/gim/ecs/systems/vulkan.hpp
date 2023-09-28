@@ -1,15 +1,28 @@
 #pragma once
 
+#include "gim/ecs/engine/entity_manager.hpp"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <SDL_surface.h>
 #include <VkBootstrap.h>
+#include <algorithm>
 #include <gim/ecs/components/engine-state.hpp>
 #include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/engine/system_manager.hpp>
+#include <iostream>
+#include <memory>
+#include <utility>
 
 namespace gim::ecs::systems {
 const int MAX_FRAMES_IN_FLIGHT = 2;
+const int WIDTH = 800;
+const int HEIGHT = 600;
+
+#define SDLMustBeTrue(expr)                                                    \
+    if (!(expr)) {                                                             \
+        std::cerr << "SDL Error: " << SDL_GetError() << std::endl;             \
+        exit(EXIT_FAILURE);                                                    \
+    }
 
 class VulkanRendererSystem : public gim::ecs::ISystem {
   private:
@@ -22,7 +35,15 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     SDL_Surface *surface;
 
   public:
-    VulkanRendererSystem() {}
+    VulkanRendererSystem() {
+        SDLMustBeTrue(SDL_Init(SDL_INIT_EVERYTHING) == 0);
+
+        window = SDL_CreateWindow("Mountain", SDL_WINDOWPOS_CENTERED,
+                                  SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT,
+                                  SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE |
+                                      SDL_WINDOW_SHOWN);
+        SDLMustBeTrue(window != nullptr);
+    }
 
     auto getSignature() -> std::shared_ptr<Signature> override {
         auto signature = std::make_shared<Signature>();
@@ -31,19 +52,22 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     }
 
     auto update() -> void override {
+        auto engineStatePair = getComponentWithEntity<
+            gim::ecs::components::EngineState::Component>();
+
+        if (engineStatePair.first == nullptr) {
+            return;
+        }
+
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
+                engineStatePair.second->state =
+                    gim::ecs::components::EngineState::Quitting;
                 return;
             } else if (event.type == SDL_WINDOWEVENT &&
                        event.window.event == SDL_WINDOWEVENT_RESIZED) {
             }
-        }
-        for (auto const &entity : entities) {
-            auto es =
-                getComponentManager()
-                    ->getComponent<
-                        gim::ecs::components::EngineState::Component>(entity);
         }
     }
 
@@ -63,6 +87,32 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     }
     auto getComponentManager() -> std::shared_ptr<ComponentManager> override {
         return componentManager;
+    }
+
+    // Try to find a component in the list of entities
+    // and return the entity and component as a tuple.
+    template <typename Component>
+    auto getComponentWithEntity()
+        -> std::pair<gim::ecs::Entity *, std::shared_ptr<Component>> {
+        auto entities = getEntities();
+        auto componentManager = getComponentManager();
+        std::shared_ptr<Component> component;
+
+        // Try to find a component in the list of entities.
+        auto entity = std::find_if(
+            entities.begin(), entities.end(),
+            [&componentManager,
+             &component](gim::ecs::Entity const &entity) -> bool {
+                component = componentManager->getComponent<Component>(entity);
+
+                return component != nullptr;
+            });
+
+        if (entity == entities.end()) {
+            return std::make_pair(nullptr, nullptr);
+        }
+
+        return std::make_pair(&*entity, component);
     }
 };
 } // namespace gim::ecs::systems
