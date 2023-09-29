@@ -32,9 +32,8 @@ class ECS {
     }
 
     template <typename T>
-    auto addComponent(Entity entity,
-                      std::shared_ptr<gim::ecs::IComponent> component) -> void {
-        componentManager->addComponent(entity, std::move(component));
+    auto addComponent(Entity entity, std::shared_ptr<T> component) -> void {
+        componentManager->addComponent<T>(entity, std::move(component));
         auto signature = entityManager->getSignature(entity);
         signature->set<T>();
         systemManager->entitySignatureChanged(entity, signature);

@@ -17,7 +17,6 @@ int main() {
     ecs->registerSystem<gim::ecs::systems::VulkanRendererSystem>();
 
     // Track internal state.
-    auto renderDataEntity = ecs->createEntity();
     auto engineStateEntity = ecs->createEntity();
     auto engineState =
         std::make_shared<gim::ecs::components::EngineState::Component>();

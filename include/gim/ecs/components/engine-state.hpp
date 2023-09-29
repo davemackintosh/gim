@@ -13,5 +13,7 @@ class Component : public gim::ecs::IComponent {
   public:
     EngineState state = EngineState::Running;
 
+    Component() = default;
+    ~Component() override = default;
 };
 } // namespace gim::ecs::components::EngineState

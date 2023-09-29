@@ -14,7 +14,12 @@ namespace gim::ecs {
  *
  * There is no constructor for this class, because it is an interface.
  */
-class IComponent {};
+class IComponent {
+  public:
+    virtual ~IComponent() = 0;
+};
+
+IComponent::~IComponent() = default;
 
 class IComponentArray {
   public:
