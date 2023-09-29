@@ -5,6 +5,7 @@
 #include <gim/ecs/engine/entity_manager.hpp>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <string_view>
 #include <typeinfo>
 
@@ -60,6 +61,48 @@ class ComponentManager {
         for (auto const &[key, componentArray] : componentArrays) {
             componentArray->entityDestroyed(entity);
         }
+    }
+
+    // Try to find a component in the list of entities
+    // and return the entity and component as a tuple.
+    template <typename Component>
+    auto getTComponentWithEntity(const std::vector<gim::ecs::Entity> entities)
+        -> std::pair<gim::ecs::Entity *, std::shared_ptr<Component>> {
+        std::shared_ptr<Component> component;
+
+        // Try to find a component in the list of entities.
+        auto entity = std::find_if(
+            entities.begin(), entities.end(),
+            [this, &component](gim::ecs::Entity const &entity) -> bool {
+                component = getComponent<Component>(entity);
+
+                return component != nullptr;
+            });
+
+        if (entity == entities.end()) {
+            return std::make_pair(nullptr, nullptr);
+        }
+
+        return std::make_pair(&entity, component);
+    }
+
+    template <typename Component>
+    auto getAllTComponentsAndEntities(
+        std::vector<std::shared_ptr<gim::ecs::Entity>> entities)
+        -> std::vector<
+            std::pair<gim::ecs::Entity *, std::shared_ptr<Component>>> {
+        return entities |
+               std::views::filter(
+                   [this](gim::ecs::Entity const &entity) -> bool {
+                       return getComponent<Component>(entity) != nullptr;
+                   }) |
+               std::views::transform(
+                   [this](gim::ecs::Entity const &entity)
+                       -> std::pair<gim::ecs::Entity *,
+                                    std::shared_ptr<Component>> {
+                       return std::make_pair(&entity,
+                                             getComponent<Component>(entity));
+                   });
     }
 };
 } // namespace gim::ecs

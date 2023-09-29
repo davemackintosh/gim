@@ -1,10 +1,13 @@
 #include <SDL_video.h>
 #include <cstdlib>
 #include <gim/ecs/components/engine-state.hpp>
+#include <gim/ecs/components/shader-base.hpp>
 #include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/ecs.hpp>
 #include <gim/ecs/systems/vulkan.hpp>
 #include <memory>
+
+struct VertexData {};
 
 int main() {
     auto ecs = std::make_shared<gim::ecs::ECS>();
@@ -12,6 +15,8 @@ int main() {
     // Register all the components.
     ecs->registerComponent<gim::ecs::components::EngineState::Component>();
     ecs->registerComponent<gim::ecs::components::Vertex>();
+    ecs->registerComponent<
+        gim::ecs::components::Shader::Component<VertexData>>();
 
     // Register all the systems.
     ecs->registerSystem<gim::ecs::systems::VulkanRendererSystem>();

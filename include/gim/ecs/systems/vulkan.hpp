@@ -31,6 +31,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
   public:
     VulkanRendererSystem() : instance(gim::vulkan::Instance()) {}
 
+#pragma mark - ECS
+
     auto getSignature() -> std::shared_ptr<Signature> override {
         auto signature = std::make_shared<Signature>();
         signature->set<gim::ecs::components::EngineState::Component>();
@@ -39,8 +41,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     }
 
     auto update() -> void override {
-        auto engineStatePair = getComponentWithEntity<
-            gim::ecs::components::EngineState::Component>();
+        auto engineStatePair = componentManager->getTComponentWithEntity<
+            gim::ecs::components::EngineState::Component>(getEntities());
 
         if (engineStatePair.first == nullptr) {
             return;
@@ -58,8 +60,6 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         }
     }
 
-#pragma mark - ECS
-
     auto insertEntity(Entity entity) -> void override {
         entities.push_back(entity);
     }
@@ -76,32 +76,6 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     }
     auto getComponentManager() -> std::shared_ptr<ComponentManager> override {
         return componentManager;
-    }
-
-    // Try to find a component in the list of entities
-    // and return the entity and component as a tuple.
-    template <typename Component>
-    auto getComponentWithEntity()
-        -> std::pair<gim::ecs::Entity *, std::shared_ptr<Component>> {
-        auto entities = getEntities();
-        auto componentManager = getComponentManager();
-        std::shared_ptr<Component> component;
-
-        // Try to find a component in the list of entities.
-        auto entity = std::find_if(
-            entities.begin(), entities.end(),
-            [&componentManager,
-             &component](gim::ecs::Entity const &entity) -> bool {
-                component = componentManager->getComponent<Component>(entity);
-
-                return component != nullptr;
-            });
-
-        if (entity == entities.end()) {
-            return std::make_pair(nullptr, nullptr);
-        }
-
-        return std::make_pair(&*entity, component);
     }
 };
 } // namespace gim::ecs::systems

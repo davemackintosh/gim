@@ -20,7 +20,7 @@ find_package(vk-bootstrap CONFIG REQUIRED)
 find_path(VKB_INCLUDES VkBootstrap.h)
 
 # SOURCES
-set(SOURCES ./src/platforms/linux.cpp)
+set(SOURCES ./src/platforms/linux.cpp ./src/library/fs.cpp ./src/library/glsl.cpp)
 include_directories(./include ${VK_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}/include)
 configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
 
@@ -28,7 +28,9 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 append_glsl_to_target(
   ${PROJECT_SOURCE_DIR}/shaders/voxel.comp
   ${PROJECT_SOURCE_DIR}/shaders/default.frag
-  ${PROJECT_SOURCE_DIR}/shaders/default.vert)
+  ${PROJECT_SOURCE_DIR}/shaders/default.vert
+  ${PROJECT_SOURCE_DIR}/shaders/triangle.vert
+  ${PROJECT_SOURCE_DIR}/shaders/triangle.frag)
 
 # LINKER
 target_link_libraries(
