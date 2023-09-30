@@ -67,7 +67,8 @@ class ComponentManager {
     // and return the entity and component as a tuple.
     template <typename Component>
     auto getTComponentWithEntity(const std::vector<gim::ecs::Entity> entities)
-        -> std::pair<gim::ecs::Entity *, std::shared_ptr<Component>> {
+        -> std::optional<
+            std::pair<gim::ecs::Entity, std::shared_ptr<Component>>> {
         std::shared_ptr<Component> component;
 
         // Try to find a component in the list of entities.
@@ -80,10 +81,12 @@ class ComponentManager {
             });
 
         if (entity == entities.end()) {
-            return std::make_pair(nullptr, nullptr);
+            return std::nullopt;
         }
 
-        return std::make_pair(&entity, component);
+        auto result = std::make_pair(*entity, component);
+
+        return std::make_optional(result);
     }
 
     template <typename Component>

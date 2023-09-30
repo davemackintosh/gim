@@ -44,14 +44,16 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         auto engineStatePair = componentManager->getTComponentWithEntity<
             gim::ecs::components::EngineState::Component>(getEntities());
 
-        if (engineStatePair.first == nullptr) {
+        if (!engineStatePair.has_value()) {
             return;
         }
+
+        auto [_, engineState] = engineStatePair.value();
 
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                engineStatePair.second->state =
+                engineState->state =
                     gim::ecs::components::EngineState::Quitting;
                 return;
             } else if (event.type == SDL_WINDOWEVENT &&

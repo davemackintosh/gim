@@ -20,7 +20,7 @@ find_package(vk-bootstrap CONFIG REQUIRED)
 find_path(VKB_INCLUDES VkBootstrap.h)
 
 # SOURCES
-set(SOURCES ./src/platforms/linux.cpp ./src/library/fs.cpp ./src/library/glsl.cpp)
+set(SOURCES ./src/platforms/linux.cpp ./src/library/fs.cpp)
 include_directories(./include ${VK_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}/include)
 configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
 
