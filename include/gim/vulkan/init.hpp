@@ -49,6 +49,7 @@ class Instance {
         createSwapchain();
         getQueues();
         createRenderPass();
+        createGraphicsPipeline();
     }
 
   private:
@@ -184,9 +185,9 @@ class Instance {
         }
     }
 
-    auto create_graphics_pipeline() -> void {
-        auto vert_code = gim::library::fs::readFile("/vert.spv");
-        auto frag_code = gim::library::fs::readFile("/frag.spv");
+    auto createGraphicsPipeline() -> void {
+        auto vert_code = gim::library::fs::readFile("shaders/default.vert.spv");
+        auto frag_code = gim::library::fs::readFile("shaders/default.frag.spv");
 
         VkShaderModule vert_module =
             gim::library::glsl::createShaderModule(device, vert_code);

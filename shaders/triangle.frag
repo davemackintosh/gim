@@ -1,4 +1,3 @@
-//glsl version 4.5
 #version 450
 
 //output write

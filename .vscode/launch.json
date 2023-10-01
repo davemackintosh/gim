@@ -13,6 +13,10 @@
         {
           "name": "PATH",
           "value": "${env:PATH}:${command:cmake.getLaunchTargetDirectory}"
+        },
+        {
+          "name": "FS_PREFIX",
+          "value": "${command:cmake.getLaunchTargetDirectory}/"
         }
       ],
       "MIMode": "lldb"

@@ -10,7 +10,6 @@ template <typename V, typename F = V, typename C = V> class Bindings {
     F fragData;
     C compData;
 
-    virtual ~Bindings() = 0;
     virtual auto getBindingsForDevice()
         -> std::vector<VkVertexInputAttributeDescription> = 0;
 };

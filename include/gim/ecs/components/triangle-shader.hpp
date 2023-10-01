@@ -13,6 +13,8 @@ class TriangleBindings final
         -> std::vector<VkVertexInputAttributeDescription> override {
         return {};
     }
+
+    ~TriangleBindings() = default;
 };
 
 class TriangleShader final
@@ -22,7 +24,7 @@ class TriangleShader final
 
     TriangleShader()
         : Component<TriangleBindings>(
-              gim::library::fs::readFile("shaders/triangle.vert"),
-              gim::library::fs::readFile("shaders/triangle.frag")) {}
+              gim::library::fs::readFile("shaders/triangle.vert.spv"),
+              gim::library::fs::readFile("shaders/triangle.frag.spv")) {}
 };
 } // namespace gim::ecs::components::Shader

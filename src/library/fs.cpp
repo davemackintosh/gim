@@ -3,8 +3,17 @@
 #include <iostream>
 
 namespace gim::library::fs {
+std::string getFSPrefix() {
+    char *val = getenv("FS_PREFIX");
+    return val == nullptr ? std::string("/") : std::string(val);
+}
+
 std::vector<char> readFile(const std::string &filename) {
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    auto prefix = getFSPrefix();
+    std::cout << "PREFIX: " << prefix << std::endl;
+    auto path = prefix + filename;
+    std::cout << "PATH: " << path << std::endl;
+    std::ifstream file(path, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
         throw std::runtime_error("failed to open file!");
