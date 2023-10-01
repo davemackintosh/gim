@@ -17,11 +17,9 @@ class TriangleBindings final
     ~TriangleBindings() = default;
 };
 
-class TriangleShader final
+class TriangleShader
     : public gim::ecs::components::Shader::Component<TriangleBindings> {
   public:
-    ~TriangleShader() override = default;
-
     TriangleShader()
         : Component<TriangleBindings>(
               gim::library::fs::readFile("shaders/triangle.vert.spv"),

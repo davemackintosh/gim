@@ -5,11 +5,12 @@
 namespace gim::library::fs {
 std::string getFSPrefix() {
     char *val = getenv("FS_PREFIX");
-    return val == nullptr ? std::string("/") : std::string(val);
+    return val == nullptr ? std::string("./") : std::string(val);
 }
 
 std::vector<char> readFile(const std::string &filename) {
     auto prefix = getFSPrefix();
+    std::cout << std::filesystem::current_path() << std::endl;
     std::cout << "PREFIX: " << prefix << std::endl;
     auto path = prefix + filename;
     std::cout << "PATH: " << path << std::endl;

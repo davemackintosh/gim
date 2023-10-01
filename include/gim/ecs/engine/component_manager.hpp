@@ -69,22 +69,19 @@ class ComponentManager {
     auto getTComponentWithEntity(const std::vector<gim::ecs::Entity> entities)
         -> std::optional<
             std::pair<gim::ecs::Entity, std::shared_ptr<Component>>> {
-        std::shared_ptr<Component> component;
 
         // Try to find a component in the list of entities.
-        auto entity = std::find_if(
-            entities.begin(), entities.end(),
-            [this, &component](gim::ecs::Entity const &entity) -> bool {
-                component = getComponent<Component>(entity);
-
-                return component != nullptr;
-            });
+        auto entity =
+            std::find_if(entities.begin(), entities.end(),
+                         [this](gim::ecs::Entity const &entity) -> bool {
+                             return getComponent<Component>(entity) != nullptr;
+                         });
 
         if (entity == entities.end()) {
             return std::nullopt;
         }
 
-        auto result = std::make_pair(*entity, component);
+        auto result = std::make_pair(*entity, getComponent<Component>(*entity));
 
         return std::make_optional(result);
     }

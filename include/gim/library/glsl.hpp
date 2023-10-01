@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gim/vulkan/init.hpp>
+#include <gim/vulkan/instance.hpp>
 #include <vector>
 #include <vulkan/vulkan.hpp>
 
