@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <gim/ecs/components/engine-state.hpp>
 #include <gim/ecs/components/triangle-shader.hpp>
-#include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/engine/system_manager.hpp>
 #include <gim/engine.hpp>
 #include <gim/vulkan/instance.hpp>
@@ -28,12 +27,15 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
     // Vulkan.
     gim::vulkan::Instance instance;
-    std::shared_ptr<gim::ecs::components::Shader::TriangleShader>
-        triangleShader;
+    VkBuffer vertexBuffer;
+    std::shared_ptr<gim::ecs::components::Shader::TriangleShader> shader;
     bool readyToFinishInitialization = false;
+    VkDeviceMemory vertexBufferMemory;
 
   public:
-    VulkanRendererSystem() : instance(gim::vulkan::Instance()) {
+    VulkanRendererSystem() : instance(gim::vulkan::Instance()) {}
+    ~VulkanRendererSystem() override {
+        vkDestroyBuffer(instance.device.device, vertexBuffer, nullptr);
     }
 
 #pragma mark - ECS
@@ -65,7 +67,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         auto [_e, engineState] = engineStatePair.value();
         auto [_t, triangleShaderComponent] = triangleShaderPair.value();
 
-        triangleShader = triangleShaderComponent;
+        shader = triangleShaderComponent;
 
         if (!readyToFinishInitialization) {
             readyToFinishInitialization = true;
@@ -110,54 +112,95 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
+        createVertexBuffer();
         createCommandBuffers();
         createSyncObjects();
     }
 
-    auto createGraphicsPipeline() -> void {
-        //        auto vert_code =
-        //        gim::library::fs::readFile("shaders/default.vert.spv"); auto
-        //        frag_code =
-        //        gim::library::fs::readFile("shaders/default.frag.spv");
-        //
-        //        VkShaderModule frag_module =
-        //            gim::library::glsl::createShaderModule(device, frag_code);
-        //        if (vert_module == VK_NULL_HANDLE || frag_module ==
-        //        VK_NULL_HANDLE) {
-        //            throw std::runtime_error("failed to create shader
-        //            modules!");
-        //        }
-        //
-        //        VkPipelineShaderStageCreateInfo vert_stage_info = {};
-        //        vert_stage_info.sType =
-        //            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        //        vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        //        vert_stage_info.module = vert_module;
-        //        vert_stage_info.pName = "main";
-        //
-        //        VkPipelineShaderStageCreateInfo frag_stage_info = {};
-        //        frag_stage_info.sType =
-        //            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        //        frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        //        frag_stage_info.module = frag_module;
-        //        frag_stage_info.pName = "main";
-        //
-        //        VkPipelineShaderStageCreateInfo shader_stages[] =
-        //        {vert_stage_info,
-        //                                                           frag_stage_info};
+    [[nodiscard]] uint32_t
+    findMemoryType(uint32_t typeFilter,
+                   VkMemoryPropertyFlags properties) const {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(instance.device.physical_device,
+                                            &memProperties);
 
-        if (!triangleShader) {
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if ((typeFilter & (1 << i)) &&
+                (memProperties.memoryTypes[i].propertyFlags & properties) ==
+                    properties) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("failed to find suitable memory type!");
+    }
+
+    auto createVertexBuffer() -> void {
+        VkBufferCreateInfo bufferInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = shader->getBindings()->getBufferSize(),
+            .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        };
+
+        if (vkCreateBuffer(instance.device.device, &bufferInfo, nullptr,
+                           &vertexBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(instance.device.device, vertexBuffer,
+                                      &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex =
+            findMemoryType(memRequirements.memoryTypeBits,
+                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        if (vkAllocateMemory(instance.device.device, &allocInfo, nullptr,
+                             &vertexBufferMemory) != VK_SUCCESS) {
+            throw std::runtime_error(
+                "failed to allocate vertex buffer memory!");
+        }
+
+        vkBindBufferMemory(instance.device.device, vertexBuffer,
+                           vertexBufferMemory, 0);
+
+        void *data;
+        vkMapMemory(instance.device.device, vertexBufferMemory, 0,
+                    bufferInfo.size, 0, &data);
+        memcpy(data, shader->getBindings()->vertData->vertices.data(),
+               (size_t)bufferInfo.size);
+        vkUnmapMemory(instance.device.device, vertexBufferMemory);
+    }
+
+    auto createGraphicsPipeline() -> void {
+        if (!shader) {
             std::cout << "Required triangle shader not found!" << std::endl;
             return;
         }
-        auto shader_stages =
-            triangleShader->getShaderStageCreateInfo(instance.device);
+        auto shader_stages = shader->getShaderStageCreateInfo(instance.device);
 
-        VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
-        vertex_input_info.sType =
+        auto shaderBindings = shader->getBindings();
+        auto shaderVertexBindings =
+            shaderBindings->getVertexBindingDescriptionsForDevice();
+        auto shaderAttributes =
+            shaderBindings->getVertexAttributesDescriptionsForDevice();
+
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+        vertexInputInfo.sType =
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertex_input_info.vertexBindingDescriptionCount = 0;
-        vertex_input_info.vertexAttributeDescriptionCount = 0;
+        vertexInputInfo.vertexBindingDescriptionCount =
+            static_cast<uint32_t>(shaderVertexBindings.size());
+        vertexInputInfo.vertexAttributeDescriptionCount =
+            static_cast<uint32_t>(shaderAttributes.size());
+
+        vertexInputInfo.pVertexBindingDescriptions =
+            shaderVertexBindings.data();
+        vertexInputInfo.pVertexAttributeDescriptions = shaderAttributes.data();
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
         input_assembly.sType =
@@ -246,7 +289,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipeline_info.stageCount = 2;
         pipeline_info.pStages = shader_stages.data();
-        pipeline_info.pVertexInputState = &vertex_input_info;
+        pipeline_info.pVertexInputState = &vertexInputInfo;
         pipeline_info.pInputAssemblyState = &input_assembly;
         pipeline_info.pViewportState = &viewport_state;
         pipeline_info.pRasterizationState = &rasterizer;
@@ -265,14 +308,19 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         }
     }
 
-    auto createFramebuffers () -> void {
-        instance.data.swapchain_images = instance.swapchain.get_images().value ();
-        instance.data.swapchain_image_views = instance.swapchain.get_image_views().value ();
+    auto createFramebuffers() -> void {
+        instance.data.swapchain_images =
+            instance.swapchain.get_images().value();
+        instance.data.swapchain_image_views =
+            instance.swapchain.get_image_views().value();
 
-        instance.data.framebuffers.resize(instance.data.swapchain_image_views.size());
+        instance.data.framebuffers.resize(
+            instance.data.swapchain_image_views.size());
 
-        for (size_t i = 0; i < instance.data.swapchain_image_views.size(); i++) {
-            VkImageView attachments[] = { instance.data.swapchain_image_views[i] };
+        for (size_t i = 0; i < instance.data.swapchain_image_views.size();
+             i++) {
+            VkImageView attachments[] = {
+                instance.data.swapchain_image_views[i]};
 
             VkFramebufferCreateInfo framebuffer_info = {};
             framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -283,32 +331,39 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             framebuffer_info.height = instance.swapchain.extent.height;
             framebuffer_info.layers = 1;
 
-            if (vkCreateFramebuffer(instance.device, &framebuffer_info, nullptr, &instance.data.framebuffers[i]) != VK_SUCCESS) {
-                throw std::runtime_error ("failed to create framebuffer!");
+            if (vkCreateFramebuffer(instance.device, &framebuffer_info, nullptr,
+                                    &instance.data.framebuffers[i]) !=
+                VK_SUCCESS) {
+                throw std::runtime_error("failed to create framebuffer!");
             }
         }
     }
 
-    auto createCommandPool () -> void {
+    auto createCommandPool() -> void {
         VkCommandPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        pool_info.queueFamilyIndex = instance.device.get_queue_index(vkb::QueueType::graphics).value ();
+        pool_info.queueFamilyIndex =
+            instance.device.get_queue_index(vkb::QueueType::graphics).value();
 
-        if (vkCreateCommandPool(instance.device, &pool_info, nullptr, &instance.data.command_pool) != VK_SUCCESS) {
-            throw std::runtime_error ("failed to create command pool!");
+        if (vkCreateCommandPool(instance.device, &pool_info, nullptr,
+                                &instance.data.command_pool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create command pool!");
         }
     }
 
-    int createCommandBuffers () {
-        instance.data.command_buffers.resize(instance.data.framebuffers.size ());
+    auto createCommandBuffers() -> void {
+        instance.data.command_buffers.resize(instance.data.framebuffers.size());
 
         VkCommandBufferAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = instance.data.command_pool;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint32_t)instance.data.command_buffers.size ();
+        allocInfo.commandBufferCount =
+            (uint32_t)instance.data.command_buffers.size();
 
-        if (vkAllocateCommandBuffers(instance.device, &allocInfo, instance.data.command_buffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(instance.device, &allocInfo,
+                                     instance.data.command_buffers.data()) !=
+            VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
 
@@ -316,17 +371,19 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             VkCommandBufferBeginInfo begin_info = {};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-            if (vkBeginCommandBuffer(instance.data.command_buffers[i], &begin_info) != VK_SUCCESS) {
-                throw std::runtime_error("failed to begin recording command buffers!");
+            if (vkBeginCommandBuffer(instance.data.command_buffers[i],
+                                     &begin_info) != VK_SUCCESS) {
+                throw std::runtime_error(
+                    "failed to begin recording command buffers!");
             }
 
             VkRenderPassBeginInfo render_pass_info = {};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             render_pass_info.renderPass = instance.data.render_pass;
             render_pass_info.framebuffer = instance.data.framebuffers[i];
-            render_pass_info.renderArea.offset = { 0, 0 };
+            render_pass_info.renderArea.offset = {0, 0};
             render_pass_info.renderArea.extent = instance.swapchain.extent;
-            VkClearValue clearColor{ { { 0.0f, 0.0f, 0.0f, 1.0f } } };
+            VkClearValue clearColor{{{0.0f, 0.0f, 0.0f, 1.0f}}};
             render_pass_info.clearValueCount = 1;
             render_pass_info.pClearValues = &clearColor;
 
@@ -339,27 +396,32 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             viewport.maxDepth = 1.0f;
 
             VkRect2D scissor = {};
-            scissor.offset = { 0, 0 };
+            scissor.offset = {0, 0};
             scissor.extent = instance.swapchain.extent;
 
             vkCmdSetViewport(instance.data.command_buffers[i], 0, 1, &viewport);
             vkCmdSetScissor(instance.data.command_buffers[i], 0, 1, &scissor);
-            vkCmdBeginRenderPass(instance.data.command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(instance.data.command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, instance.data.graphics_pipeline);
+            vkCmdBeginRenderPass(instance.data.command_buffers[i],
+                                 &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(instance.data.command_buffers[i],
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              instance.data.graphics_pipeline);
             vkCmdDraw(instance.data.command_buffers[i], 3, 1, 0, 0);
             vkCmdEndRenderPass(instance.data.command_buffers[i]);
 
-            if (vkEndCommandBuffer(instance.data.command_buffers[i]) != VK_SUCCESS) {
+            if (vkEndCommandBuffer(instance.data.command_buffers[i]) !=
+                VK_SUCCESS) {
                 throw std::runtime_error("failed to record command buffer!");
             }
         }
     }
 
-    auto createSyncObjects () -> void {
+    auto createSyncObjects() -> void {
         instance.data.available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
         instance.data.finished_semaphore.resize(MAX_FRAMES_IN_FLIGHT);
         instance.data.in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
-        instance.data.image_in_flight.resize(instance.swapchain.image_count, VK_NULL_HANDLE);
+        instance.data.image_in_flight.resize(instance.swapchain.image_count,
+                                             VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphore_info = {};
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -369,40 +431,49 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(instance.device, &semaphore_info, nullptr, &instance.data.available_semaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(instance.device, &semaphore_info, nullptr, &instance.data.finished_semaphore[i]) != VK_SUCCESS ||
-                vkCreateFence(instance.device, &fence_info, nullptr, &instance.data.in_flight_fences[i]) != VK_SUCCESS) {
+            if (vkCreateSemaphore(instance.device, &semaphore_info, nullptr,
+                                  &instance.data.available_semaphores[i]) !=
+                    VK_SUCCESS ||
+                vkCreateSemaphore(instance.device, &semaphore_info, nullptr,
+                                  &instance.data.finished_semaphore[i]) !=
+                    VK_SUCCESS ||
+                vkCreateFence(instance.device, &fence_info, nullptr,
+                              &instance.data.in_flight_fences[i]) !=
+                    VK_SUCCESS) {
                 throw std::runtime_error("failed to create sync objects!");
             }
         }
     }
 
     auto recreate_swapchain() -> auto {
-        vkDeviceWaitIdle (instance.device);
-        vkDestroyCommandPool (instance.device, instance.data.command_pool, nullptr);
+        vkDeviceWaitIdle(instance.device);
+        vkDestroyCommandPool(instance.device, instance.data.command_pool,
+                             nullptr);
 
         for (auto framebuffer : instance.data.framebuffers) {
-            vkDestroyFramebuffer (instance.device, framebuffer, nullptr);
+            vkDestroyFramebuffer(instance.device, framebuffer, nullptr);
         }
 
-        instance.swapchain.destroy_image_views(instance.data.swapchain_image_views);
+        instance.swapchain.destroy_image_views(
+            instance.data.swapchain_image_views);
 
         instance.createSwapchain();
         createFramebuffers();
         createCommandPool();
         createCommandBuffers();
     }
-    
+
     auto drawFrame() -> void {
-        vkWaitForFences(instance.device, 1, &instance.data.in_flight_fences[instance.data.current_frame], VK_TRUE, UINT64_MAX);
-        
+        vkWaitForFences(
+            instance.device, 1,
+            &instance.data.in_flight_fences[instance.data.current_frame],
+            VK_TRUE, UINT64_MAX);
+
         uint32_t image_index = 0;
-        VkResult result = vkAcquireNextImageKHR(instance.device,
-                                                      instance.swapchain,
-                                                      UINT64_MAX,
-                                                      instance.data.available_semaphores[instance.data.current_frame],
-                                                      VK_NULL_HANDLE,
-                                                      &image_index);
+        VkResult result = vkAcquireNextImageKHR(
+            instance.device, instance.swapchain, UINT64_MAX,
+            instance.data.available_semaphores[instance.data.current_frame],
+            VK_NULL_HANDLE, &image_index);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             return recreate_swapchain();
@@ -411,29 +482,41 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         }
 
         if (instance.data.image_in_flight[image_index] != VK_NULL_HANDLE) {
-            vkWaitForFences(instance.device, 1, &instance.data.image_in_flight[image_index], VK_TRUE, UINT64_MAX);
+            vkWaitForFences(instance.device, 1,
+                            &instance.data.image_in_flight[image_index],
+                            VK_TRUE, UINT64_MAX);
         }
-        instance.data.image_in_flight[image_index] = instance.data.in_flight_fences[instance.data.current_frame];
+        instance.data.image_in_flight[image_index] =
+            instance.data.in_flight_fences[instance.data.current_frame];
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore wait_semaphores[] = { instance.data.available_semaphores[instance.data.current_frame] };
-        VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        VkSemaphore wait_semaphores[] = {
+            instance.data.available_semaphores[instance.data.current_frame]};
+        VkPipelineStageFlags wait_stages[] = {
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = wait_semaphores;
         submitInfo.pWaitDstStageMask = wait_stages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &instance.data.command_buffers[image_index];
+        submitInfo.pCommandBuffers =
+            &instance.data.command_buffers[image_index];
 
-        VkSemaphore signal_semaphores[] = { instance.data.finished_semaphore[instance.data.current_frame] };
+        VkSemaphore signal_semaphores[] = {
+            instance.data.finished_semaphore[instance.data.current_frame]};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signal_semaphores;
 
-        vkResetFences(instance.device, 1, &instance.data.in_flight_fences[instance.data.current_frame]);
+        vkResetFences(
+            instance.device, 1,
+            &instance.data.in_flight_fences[instance.data.current_frame]);
 
-        if (vkQueueSubmit(instance.data.graphics_queue, 1, &submitInfo, instance.data.in_flight_fences[instance.data.current_frame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(
+                instance.data.graphics_queue, 1, &submitInfo,
+                instance.data.in_flight_fences[instance.data.current_frame]) !=
+            VK_SUCCESS) {
             std::cout << "failed to submit draw command buffer\n";
         }
 
@@ -443,7 +526,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         present_info.waitSemaphoreCount = 1;
         present_info.pWaitSemaphores = signal_semaphores;
 
-        VkSwapchainKHR swapChains[] = { instance.swapchain };
+        VkSwapchainKHR swapChains[] = {instance.swapchain};
         present_info.swapchainCount = 1;
         present_info.pSwapchains = swapChains;
 
@@ -456,7 +539,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             throw std::runtime_error("failed to present swapchain image!");
         }
 
-        instance.data.current_frame = (instance.data.current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+        instance.data.current_frame =
+            (instance.data.current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 };
 } // namespace gim::ecs::systems

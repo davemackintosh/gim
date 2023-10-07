@@ -1,47 +1,97 @@
 #pragma once
 
+#include <algorithm>
 #include <gim/ecs/components/shader-base.hpp>
 #include <gim/ecs/engine/component_array.hpp>
 #include <gim/library/fs.hpp>
+#include <glm/fwd.hpp>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <utility>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_enums.hpp>
 
 namespace gim::ecs::components::Shader {
-class TriangleFragmentShader {
+struct Vertex {
   public:
-    std::vector<glm::vec4> colors;
+    glm::vec3 position;
+    glm::vec4 color;
+};
+
+class TriangleVertexShaderData {
+  public:
+    std::vector<Vertex> vertices;
 };
 
 class TriangleBindings final
-    : public gim::ecs::components::Shader::Bindings<void *,
-                                                    TriangleFragmentShader *> {
+    : public gim::ecs::components::Shader::Bindings<TriangleVertexShaderData,
+                                                    void *, void *> {
+
   public:
-    auto getVertexBindingsForDevice()
+    explicit TriangleBindings(std::shared_ptr<TriangleVertexShaderData> data)
+        : gim::ecs::components::Shader::Bindings<TriangleVertexShaderData,
+                                                 void *, void *>(
+              std::move(data)) {}
+
+    TriangleBindings() = default;
+
+    auto getBufferSize() -> unsigned long override {
+        return sizeof(this->vertData[0]) * vertData->vertices.size();
+    }
+
+    auto getVertexBindingDescriptionsForDevice()
+        -> std::vector<VkVertexInputBindingDescription> override {
+        return {
+            {
+                .binding = 0,
+                .stride = sizeof(Vertex),
+                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+            },
+        };
+    }
+
+    auto getVertexAttributesDescriptionsForDevice()
         -> std::vector<VkVertexInputAttributeDescription> override {
+        return {
+            {
+                .location = 0,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
+                .offset = offsetof(Vertex, position),
+            },
+            {
+                .location = 2,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
+                .offset = offsetof(Vertex, color),
+            },
+        };
+    }
+
+    auto getFragmentBindingDescriptionsForDevice()
+        -> std::vector<VkDescriptorSetLayoutBinding> override {
         return {};
     }
-    auto getFragmentBindingsForDevice()
+
+    auto getFragmentAttributesDescriptionsForDevice()
         -> std::vector<VkDescriptorSetLayoutBinding> override {
-        return std::vector<VkDescriptorSetLayoutBinding>(
-            {{.binding = 0,
-              .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-              .descriptorCount = 1,
-              .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT}});
+        return {};
     }
 
     ~TriangleBindings() = default;
 };
 
-class TriangleShader
-    : public gim::ecs::components::Shader::Component<TriangleBindings> {
-  public:
-    TriangleBindings bindings;
+class TriangleShader : public gim::ecs::components::Shader::Component {
+  private:
+    std::shared_ptr<TriangleBindings> bindings;
 
-    explicit TriangleShader(TriangleBindings &bindings)
-        : Component<TriangleBindings>(
-              gim::library::fs::readFile("shaders/triangle.vert.spv"),
-              gim::library::fs::readFile("shaders/triangle.frag.spv")) {
+  public:
+    explicit TriangleShader(const std::shared_ptr<TriangleBindings> &bindings)
+        : Component(gim::library::fs::readFile("shaders/triangle.vert.spv"),
+                    gim::library::fs::readFile("shaders/triangle.frag.spv")) {
         this->bindings = bindings;
     }
+
+    auto getBindings() -> std::shared_ptr<TriangleBindings> { return bindings; }
 };
 } // namespace gim::ecs::components::Shader

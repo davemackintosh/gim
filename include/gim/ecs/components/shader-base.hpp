@@ -8,17 +8,41 @@
 namespace gim::ecs::components::Shader {
 template <typename V, typename F = V, typename C = V> class Bindings {
   public:
-    V vertData;
-    F fragData;
-    C compData;
+    std::shared_ptr<V> vertData;
+    std::shared_ptr<F> fragData;
+    std::shared_ptr<C> compData;
 
-    virtual auto getVertexBindingsForDevice()
-        -> std::vector<VkVertexInputAttributeDescription> = 0;
-    virtual auto getFragmentBindingsForDevice()
+    explicit Bindings(std::shared_ptr<V> vertData = nullptr,
+                      std::shared_ptr<F> fragData = nullptr,
+                      std::shared_ptr<C> compData = nullptr)
+        : vertData(vertData), fragData(fragData), compData(compData) {}
+
+    //////////////
+    // Bindings //
+    //////////////
+
+    virtual auto getVertexBindingDescriptionsForDevice()
+        -> std::vector<VkVertexInputBindingDescription> = 0;
+    virtual auto getFragmentBindingDescriptionsForDevice()
         -> std::vector<VkDescriptorSetLayoutBinding> = 0;
+
+    ////////////////
+    // Attributes //
+    ////////////////
+
+    virtual auto getVertexAttributesDescriptionsForDevice()
+        -> std::vector<VkVertexInputAttributeDescription> = 0;
+    virtual auto getFragmentAttributesDescriptionsForDevice()
+        -> std::vector<VkDescriptorSetLayoutBinding> = 0;
+
+    /////////////
+    // Buffers //
+    /////////////
+
+    virtual auto getBufferSize() -> unsigned long = 0;
 };
 
-template <typename BindingType> class Component : public gim::ecs::IComponent {
+class Component : public gim::ecs::IComponent {
   private:
     VkShaderModule vertModule = VK_NULL_HANDLE;
     VkShaderModule fragModule = VK_NULL_HANDLE;
@@ -28,7 +52,6 @@ template <typename BindingType> class Component : public gim::ecs::IComponent {
     std::vector<char> vertCode;
     std::vector<char> fragCode;
     std::vector<char> computeCode;
-    BindingType shaderData;
 
     Component(std::vector<char> vertStage, std::vector<char> fragStage)
         : vertCode(std::move(vertStage)), fragCode(std::move(fragStage)){};
@@ -37,10 +60,10 @@ template <typename BindingType> class Component : public gim::ecs::IComponent {
         : vertCode(std::move(vertStage)), fragCode(std::move(fragStage)),
           computeCode(std::move(computeStage)){};
 
-    ~Component() {}
+    ~Component(){};
 
-    auto getShaderStage(VkShaderStageFlagBits stage,
-                        VkShaderModule shaderModule)
+    static auto getShaderStage(VkShaderStageFlagBits stage,
+                               VkShaderModule shaderModule)
         -> VkPipelineShaderStageCreateInfo {
         VkPipelineShaderStageCreateInfo stageInfo = {};
         stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

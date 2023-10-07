@@ -3,9 +3,9 @@
 #include <gim/ecs/components/engine-state.hpp>
 #include <gim/ecs/components/shader-base.hpp>
 #include <gim/ecs/components/triangle-shader.hpp>
-#include <gim/ecs/components/vertex.hpp>
 #include <gim/ecs/ecs.hpp>
 #include <gim/ecs/systems/vulkan.hpp>
+#include <glm/fwd.hpp>
 #include <memory>
 
 struct VertexData {};
@@ -15,9 +15,6 @@ int main() {
 
     // Register all the components.
     ecs->registerComponent<gim::ecs::components::EngineState::Component>();
-    ecs->registerComponent<gim::ecs::components::Vertex>();
-    ecs->registerComponent<
-        gim::ecs::components::Shader::Component<VertexData>>();
     ecs->registerComponent<gim::ecs::components::Shader::TriangleShader>();
 
     // Register all the systems.
@@ -29,8 +26,28 @@ int main() {
         std::make_shared<gim::ecs::components::EngineState::Component>();
 
     auto triangleShaderEntity = ecs->createEntity();
+    auto triangleBindings =
+        std::make_shared<gim::ecs::components::Shader::TriangleBindings>(
+            std::make_shared<gim::ecs::components::Shader::TriangleVertexShaderData>(gim::ecs::components::Shader::TriangleVertexShaderData{
+                .vertices =
+                    std::vector<gim::ecs::components::Shader::Vertex>{
+                        {
+                            .position = glm::vec3{1.f, 1.f, 0.f},
+                            .color = glm::vec4(1.f, 0.f, 0.f, 1.f),
+                        },
+                        {
+                            .position = glm::vec3{-1.f, 1.f, 0.f},
+                            .color = glm::vec4(0.f, 1.f, 0.f, 1.f),
+                        },
+                        {
+                            .position = glm::vec3{0.f, -1.f, 0.f},
+                            .color = glm::vec4(0.f, 0.f, 1.f, 1.f),
+                        },
+                    },
+            }));
     auto triangleShader =
-        std::make_shared<gim::ecs::components::Shader::TriangleShader>();
+        std::make_shared<gim::ecs::components::Shader::TriangleShader>(
+            triangleBindings);
 
     // Register the components.
     ecs->addComponent<gim::ecs::components::EngineState::Component>(
