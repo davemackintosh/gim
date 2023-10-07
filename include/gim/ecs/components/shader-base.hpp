@@ -12,8 +12,10 @@ template <typename V, typename F = V, typename C = V> class Bindings {
     F fragData;
     C compData;
 
-    virtual auto getBindingsForDevice()
+    virtual auto getVertexBindingsForDevice()
         -> std::vector<VkVertexInputAttributeDescription> = 0;
+    virtual auto getFragmentBindingsForDevice()
+        -> std::vector<VkDescriptorSetLayoutBinding> = 0;
 };
 
 template <typename BindingType> class Component : public gim::ecs::IComponent {
@@ -51,7 +53,8 @@ template <typename BindingType> class Component : public gim::ecs::IComponent {
 
     auto getVertexStageCreateInfo(const vkb::Device &device)
         -> std::optional<VkPipelineShaderStageCreateInfo> {
-        vertModule = gim::library::glsl::createShaderModule(device.device, vertCode);
+        vertModule =
+            gim::library::glsl::createShaderModule(device.device, vertCode);
 
         if (vertModule == VK_NULL_HANDLE) {
             return std::nullopt;
@@ -62,7 +65,8 @@ template <typename BindingType> class Component : public gim::ecs::IComponent {
 
     auto getFragmentStageCreateInfo(const vkb::Device &device)
         -> std::optional<VkPipelineShaderStageCreateInfo> {
-        fragModule = gim::library::glsl::createShaderModule(device.device, fragCode);
+        fragModule =
+            gim::library::glsl::createShaderModule(device.device, fragCode);
 
         if (fragModule == VK_NULL_HANDLE) {
             return std::nullopt;

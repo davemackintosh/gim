@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22.1)
 include(FetchContent)
-include("./compileGLSL.cmake")
+include("./cmake/compileGLSL.cmake")
 
 project(
   arteeyes
