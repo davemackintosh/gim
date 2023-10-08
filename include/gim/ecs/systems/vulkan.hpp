@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gim/ecs/components/camera.hpp"
 #include "gim/ecs/engine/entity_manager.hpp"
 #include "vulkan/vulkan_core.h"
 #include <SDL2/SDL.h>
@@ -13,6 +14,7 @@
 #include <gim/engine.hpp>
 #include <gim/vulkan/instance.hpp>
 #include <gim/vulkan/utils.hpp>
+#include <glm/glm.hpp>
 #include <memory>
 #include <utility>
 
@@ -28,9 +30,12 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     // Vulkan.
     gim::vulkan::Instance instance;
     VkBuffer vertexBuffer;
-    std::shared_ptr<gim::ecs::components::Shader::TriangleShader> shader;
     bool readyToFinishInitialization = false;
     VkDeviceMemory vertexBufferMemory;
+
+    // Engine.
+    std::shared_ptr<gim::ecs::components::Shader::TriangleShader> shader;
+    std::shared_ptr<gim::ecs::components::Camera::Component> camera;
 
   public:
     VulkanRendererSystem() : instance(gim::vulkan::Instance()) {}
@@ -42,10 +47,56 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
     auto getSignature() -> std::shared_ptr<Signature> override {
         auto signature = std::make_shared<Signature>();
+        signature->set<gim::ecs::components::Camera::Component>();
         signature->set<gim::ecs::components::EngineState::Component>();
         signature->set<gim::ecs::components::Shader::TriangleShader>();
 
         return signature;
+    }
+
+    auto processInput(SDL_Event &event) -> void {
+        if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+            if (event.key.keysym.sym == SDLK_w)
+                camera->position += camera->speed * camera->front;
+            if (event.key.keysym.sym == SDLK_s)
+                camera->position -= camera->speed * camera->front;
+            if (event.key.keysym.sym == SDLK_a)
+                camera->position -=
+                    glm::normalize(glm::cross(camera->front, camera->up)) *
+                    camera->speed;
+            if (event.key.keysym.sym == SDLK_d)
+                camera->position +=
+                    glm::normalize(glm::cross(camera->front, camera->up)) *
+                    camera->speed;
+        }
+    }
+
+    auto handleMouseMotion(SDL_Event &event) -> void {
+        // Update cameraYaw and cameraPitch based on mouse movement
+        if (event.type == SDL_MOUSEMOTION) {
+            float xoffset = event.motion.xrel * camera->sensitivity;
+            float yoffset = -event.motion.yrel *
+                            camera->sensitivity; // y-coordinates are reversed
+
+            std::cout << "X offset: " << xoffset << " y offset: " << yoffset
+                      << std::endl;
+            camera->yaw += xoffset;
+            camera->pitch += yoffset;
+
+            // Clamp pitch to prevent flipping
+            if (camera->pitch > 89.0f)
+                camera->pitch = 89.0f;
+            if (camera->pitch < -89.0f)
+                camera->pitch = -89.0f;
+
+            glm::vec3 front;
+            front.x = cos(glm::radians(camera->yaw)) *
+                      cos(glm::radians(camera->pitch));
+            front.y = sin(glm::radians(camera->pitch));
+            front.z = sin(glm::radians(camera->yaw)) *
+                      cos(glm::radians(camera->pitch));
+            camera->front = glm::normalize(front);
+        }
     }
 
     auto update() -> void override {
@@ -53,6 +104,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             gim::ecs::components::EngineState::Component>(getEntities());
         auto triangleShaderPair = componentManager->getTComponentWithEntity<
             gim::ecs::components::Shader::TriangleShader>(getEntities());
+        auto cameraPair = componentManager->getTComponentWithEntity<
+            gim::ecs::components::Camera::Component>(getEntities());
 
         if (!engineStatePair.has_value()) {
             std::cout << "Engine state component not found!" << std::endl;
@@ -64,10 +117,17 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             return;
         }
 
+        if (!cameraPair.has_value()) {
+            std::cout << "Camera not found!" << std::endl;
+            return;
+        }
+
         auto [_e, engineState] = engineStatePair.value();
         auto [_t, triangleShaderComponent] = triangleShaderPair.value();
+        auto [_c, cameraComponent] = cameraPair.value();
 
         shader = triangleShaderComponent;
+        camera = cameraComponent;
 
         if (!readyToFinishInitialization) {
             readyToFinishInitialization = true;
@@ -84,6 +144,9 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             } else if (event.type == SDL_WINDOWEVENT &&
                        event.window.event == SDL_WINDOWEVENT_RESIZED) {
             }
+
+            processInput(event);
+            handleMouseMotion(event);
         }
 
         drawFrame();
