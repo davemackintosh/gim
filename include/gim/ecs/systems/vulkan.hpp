@@ -406,6 +406,12 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             vkCmdBindPipeline(instance.data.command_buffers[i],
                               VK_PIPELINE_BIND_POINT_GRAPHICS,
                               instance.data.graphics_pipeline);
+            VkBuffer vertexBuffers[] = {vertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            // TODO: Will probably need to total up the bindings by counting
+            // the vertex buffers.
+            vkCmdBindVertexBuffers(instance.data.command_buffers[i], 0, 1,
+                                   vertexBuffers, offsets);
             vkCmdDraw(instance.data.command_buffers[i], 3, 1, 0, 0);
             vkCmdEndRenderPass(instance.data.command_buffers[i]);
 
