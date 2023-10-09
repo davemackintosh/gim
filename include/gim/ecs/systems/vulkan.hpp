@@ -30,8 +30,11 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     // Vulkan.
     gim::vulkan::Instance instance;
     VkBuffer vertexBuffer;
-    bool readyToFinishInitialization = false;
+    VkBuffer uniformBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkDeviceMemory uniformBufferMemory;
+
+    bool readyToFinishInitialization = false;
 
     // Engine.
     std::shared_ptr<gim::ecs::components::Shader::TriangleShader> shader;
@@ -171,18 +174,20 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     }
 
 #pragma mark - Vulkan pipeline creation.
+
     auto finishCreatingGraphicsPipeline() -> void {
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
+        createUniformBuffer();
         createCommandBuffers();
         createSyncObjects();
     }
 
-    [[nodiscard]] uint32_t
-    findMemoryType(uint32_t typeFilter,
-                   VkMemoryPropertyFlags properties) const {
+    [[nodiscard]] auto findMemoryType(uint32_t typeFilter,
+                                      VkMemoryPropertyFlags properties) const
+        -> uint32_t {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(instance.device.physical_device,
                                             &memProperties);
@@ -237,6 +242,49 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
                     bufferInfo.size, 0, &data);
         memcpy(data, shader->getBindings()->vertData->vertices.data(),
                (size_t)bufferInfo.size);
+        vkUnmapMemory(instance.device.device, vertexBufferMemory);
+    }
+
+    auto createUniformBuffer() -> void {
+        VkBuffer uniformBuffer;
+        VkDeviceMemory uniformBufferMemory;
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(gim::ecs::components::Camera::CameraUBO);
+        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(instance.device.device, &bufferInfo, nullptr,
+                           &uniformBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(instance.device.device, uniformBuffer,
+                                      &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex =
+            findMemoryType(memRequirements.memoryTypeBits,
+                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        if (vkAllocateMemory(instance.device.device, &allocInfo, nullptr,
+                             &uniformBufferMemory) != VK_SUCCESS) {
+            throw std::runtime_error(
+                "failed to allocate vertex buffer memory!");
+        }
+
+        vkBindBufferMemory(instance.device.device, uniformBuffer,
+                           uniformBufferMemory, 0);
+
+        void *data;
+        vkMapMemory(instance.device.device, uniformBufferMemory, 0,
+                    bufferInfo.size, 0, &data);
+        memcpy(data, camera->getShaderUBO().get(), (size_t)bufferInfo.size);
         vkUnmapMemory(instance.device.device, vertexBufferMemory);
     }
 
