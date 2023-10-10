@@ -23,8 +23,10 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 
 auto VK_CHECK_RESULT(VkResult result, const std::string &message) -> VkResult {
     if ((result) != VK_SUCCESS) {
-        throw std::runtime_error(
-            (message) + " (Result code: " + std::to_string(result) + ")");
+        throw std::runtime_error("failed to " + (message) + " (Result code: " +
+                                 std::to_string(result) + ")");
+    } else {
+        std::cout << "Success: " + (message) << std::endl;
     }
 
     return result;
@@ -92,8 +94,6 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             float yoffset = -event.motion.yrel *
                             camera->sensitivity; // y-coordinates are reversed
 
-            std::cout << "X offset: " << xoffset << " y offset: " << yoffset
-                      << std::endl;
             camera->yaw += xoffset;
             camera->pitch += yoffset;
 
@@ -188,10 +188,10 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 #pragma mark - Vulkan pipeline creation.
 
     auto finishCreatingGraphicsPipeline() -> void {
-        createVertexBuffer();
-        createUniformBuffer();
         createGraphicsPipeline();
         createFramebuffers();
+        createVertexBuffer();
+        createUniformBuffer();
         createCommandPool();
         createCommandBuffers();
         createSyncObjects();
@@ -225,7 +225,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
         VK_CHECK_RESULT(vkCreateBuffer(instance.device.device, &bufferInfo,
                                        nullptr, &vertexBuffer),
-                        "failed to create vertex buffer");
+                        "create vertex buffer");
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(instance.device.device, vertexBuffer,
@@ -241,7 +241,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
         VK_CHECK_RESULT(vkAllocateMemory(instance.device.device, &allocInfo,
                                          nullptr, &vertexBufferMemory),
-                        "failed to allocate vertex buffer memory!");
+                        "allocate vertex buffer memory!");
 
         vkBindBufferMemory(instance.device.device, vertexBuffer,
                            vertexBufferMemory, 0);
@@ -249,7 +249,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         void *data;
         VK_CHECK_RESULT(vkMapMemory(instance.device.device, vertexBufferMemory,
                                     0, bufferInfo.size, 0, &data),
-                        "Failed to map vertex buffer memory.");
+                        "map vertex buffer memory.");
         memcpy(data, shader->getBindings()->vertData->vertices.data(),
                (size_t)bufferInfo.size);
         vkUnmapMemory(instance.device.device, vertexBufferMemory);
@@ -258,8 +258,9 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     auto updateUniformBuffer() -> void {
         auto ubo = camera->getShaderUBO().get();
         void *data;
-        vkMapMemory(instance.device, uniformBufferMemory, 0,
-                    camera->getBufferSize(), 0, &data);
+        VK_CHECK_RESULT(vkMapMemory(instance.device, uniformBufferMemory, 0,
+                                    camera->getBufferSize(), 0, &data),
+                        "map update uniform buffer memory.");
         memcpy(data, &ubo, camera->getBufferSize());
         vkUnmapMemory(instance.device, uniformBufferMemory);
     }
@@ -273,7 +274,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
         VK_CHECK_RESULT(vkCreateBuffer(instance.device.device, &bufferInfo,
                                        nullptr, &uniformBuffer),
-                        "failed to create vertex buffer!");
+                        "create vertex buffer!");
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(instance.device.device, uniformBuffer,
@@ -289,7 +290,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
         VK_CHECK_RESULT(vkAllocateMemory(instance.device.device, &allocInfo,
                                          nullptr, &uniformBufferMemory),
-                        "failed to allocate uniform buffer memory!");
+                        "allocate uniform buffer memory!");
 
         vkBindBufferMemory(instance.device.device, uniformBuffer,
                            uniformBufferMemory, 0);
@@ -297,7 +298,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         void *data;
         VK_CHECK_RESULT(vkMapMemory(instance.device.device, uniformBufferMemory,
                                     0, bufferInfo.size, 0, &data),
-                        "failed to bind uniform buffer memory");
+                        "bind uniform buffer memory");
         memcpy(data, camera->getShaderUBO().get(), (size_t)bufferInfo.size);
         vkUnmapMemory(instance.device.device, vertexBufferMemory);
     }
@@ -341,28 +342,29 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
-        VkRect2D scissor = {};
-        scissor.offset = {0, 0};
-        scissor.extent = instance.swapchain.extent;
+        VkRect2D scissor = {
+            .offset = {0, 0},
+            .extent = instance.swapchain.extent,
+        };
 
-        VkPipelineViewportStateCreateInfo viewport_state = {};
-        viewport_state.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewport_state.viewportCount = 1;
-        viewport_state.pViewports = &viewport;
-        viewport_state.scissorCount = 1;
-        viewport_state.pScissors = &scissor;
+        VkPipelineViewportStateCreateInfo viewport_state = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+            .viewportCount = 1,
+            .pViewports = &viewport,
+            .scissorCount = 1,
+            .pScissors = &scissor,
+        };
 
-        VkPipelineRasterizationStateCreateInfo rasterizer = {};
-        rasterizer.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.depthClampEnable = VK_FALSE;
-        rasterizer.rasterizerDiscardEnable = VK_FALSE;
-        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-        rasterizer.depthBiasEnable = VK_FALSE;
+        VkPipelineRasterizationStateCreateInfo rasterizer = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .depthClampEnable = VK_FALSE,
+            .rasterizerDiscardEnable = VK_FALSE,
+            .polygonMode = VK_POLYGON_MODE_FILL,
+            .cullMode = VK_CULL_MODE_BACK_BIT,
+            .frontFace = VK_FRONT_FACE_CLOCKWISE,
+            .depthBiasEnable = VK_FALSE,
+            .lineWidth = 1.0f,
+        };
 
         VkPipelineMultisampleStateCreateInfo multisampling = {};
         multisampling.sType =
@@ -389,105 +391,111 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         color_blending.blendConstants[2] = 0.0f;
         color_blending.blendConstants[3] = 0.0f;
 
-        VkDescriptorSetLayoutBinding layoutBinding = {};
-        layoutBinding.binding = 0;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        layoutBinding.descriptorCount = 1;
-        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        VkDescriptorSetLayoutBinding layoutBinding = {
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        };
 
-        VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings = &layoutBinding;
+        VkDescriptorSetLayoutCreateInfo layoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = 1,
+            .pBindings = &layoutBinding,
+        };
 
         VkDescriptorSetLayout descriptorSetLayout;
         vkCreateDescriptorSetLayout(instance.device, &layoutInfo, nullptr,
                                     &descriptorSetLayout);
 
-        VkDescriptorPoolSize poolSize = {};
-        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = 1; // Adjust as needed
+        VkDescriptorPoolSize poolSize = {
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1, // Adjust as needed
+        };
 
-        VkDescriptorPoolCreateInfo poolInfo = {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = 1;
-        poolInfo.pPoolSizes = &poolSize;
-        poolInfo.maxSets = 1; // Adjust as needed
+        VkDescriptorPoolCreateInfo poolInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .maxSets = 1, // Adjust as needed
+            .poolSizeCount = 1,
+            .pPoolSizes = &poolSize,
+        };
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(instance.device, &poolInfo,
                                                nullptr, &descriptorPool),
                         "Failed to create descriptor pool!");
 
         VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = layouts;
+        VkDescriptorSetAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = descriptorPool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = layouts,
+        };
 
         VK_CHECK_RESULT(vkAllocateDescriptorSets(instance.device, &allocInfo,
                                                  &descriptorSet),
-                        "Failed to allocate descriptor set!");
+                        "allocate descriptor set!");
 
-        VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = uniformBuffer;
-        bufferInfo.offset = 0;
-        bufferInfo.range = camera->getBufferSize();
+        VkDescriptorBufferInfo bufferInfo = {
+            .buffer = uniformBuffer,
+            .offset = 0,
+            .range = camera->getBufferSize(),
+        };
 
-        VkWriteDescriptorSet descriptorWrite = {};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSet;
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
+        VkWriteDescriptorSet descriptorWrite = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = descriptorSet,
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .pBufferInfo = &bufferInfo,
+        };
 
         vkUpdateDescriptorSets(instance.device, 1, &descriptorWrite, 0,
                                nullptr);
 
-        VkPipelineLayoutCreateInfo pipeline_layout_info = {};
-        pipeline_layout_info.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = 1;
-        pipeline_layout_info.pushConstantRangeCount = 0;
-        pipeline_layout_info.pSetLayouts = &descriptorSetLayout;
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &descriptorSetLayout,
+        };
 
         VK_CHECK_RESULT(vkCreatePipelineLayout(instance.device,
-                                               &pipeline_layout_info, nullptr,
+                                               &pipelineLayoutInfo, nullptr,
                                                &instance.data.pipeline_layout),
-                        "failed to create pipeline layout!");
+                        "create pipeline layout!");
 
         std::vector<VkDynamicState> dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT,
                                                       VK_DYNAMIC_STATE_SCISSOR};
 
-        VkPipelineDynamicStateCreateInfo dynamic_info = {};
-        dynamic_info.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamic_info.dynamicStateCount =
-            static_cast<uint32_t>(dynamic_states.size());
-        dynamic_info.pDynamicStates = dynamic_states.data();
+        VkPipelineDynamicStateCreateInfo dynamicInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+            .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+            .pDynamicStates = dynamic_states.data(),
+        };
 
-        VkGraphicsPipelineCreateInfo pipeline_info = {};
-        pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipeline_info.stageCount = 2;
-        pipeline_info.pStages = shader_stages.data();
-        pipeline_info.pVertexInputState = &vertexInputInfo;
-        pipeline_info.pInputAssemblyState = &input_assembly;
-        pipeline_info.pViewportState = &viewport_state;
-        pipeline_info.pRasterizationState = &rasterizer;
-        pipeline_info.pMultisampleState = &multisampling;
-        pipeline_info.pColorBlendState = &color_blending;
-        pipeline_info.pDynamicState = &dynamic_info;
-        pipeline_info.layout = instance.data.pipeline_layout;
-        pipeline_info.renderPass = instance.data.render_pass;
-        pipeline_info.subpass = 0;
-        pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+        VkGraphicsPipelineCreateInfo pipelineInfo = {
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            .stageCount = 2,
+            .pStages = shader_stages.data(),
+            .pVertexInputState = &vertexInputInfo,
+            .pInputAssemblyState = &input_assembly,
+            .pViewportState = &viewport_state,
+            .pRasterizationState = &rasterizer,
+            .pMultisampleState = &multisampling,
+            .pColorBlendState = &color_blending,
+            .pDynamicState = &dynamicInfo,
+            .layout = instance.data.pipeline_layout,
+            .renderPass = instance.data.render_pass,
+            .subpass = 0,
+            .basePipelineHandle = VK_NULL_HANDLE,
+        };
 
         VK_CHECK_RESULT(vkCreateGraphicsPipelines(
-                            instance.device, VK_NULL_HANDLE, 1, &pipeline_info,
+                            instance.device, VK_NULL_HANDLE, 1, &pipelineInfo,
                             nullptr, &instance.data.graphics_pipeline),
-                        "failed to create graphics pipeline!");
+                        "create graphics pipeline!");
     }
 
     auto createFramebuffers() -> void {
@@ -516,7 +524,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             VK_CHECK_RESULT(vkCreateFramebuffer(instance.device,
                                                 &framebuffer_info, nullptr,
                                                 &instance.data.framebuffers[i]),
-                            "failed to create framebuffer!");
+                            "create framebuffer!");
         }
     }
 
@@ -529,7 +537,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         VK_CHECK_RESULT(vkCreateCommandPool(instance.device, &pool_info,
                                             nullptr,
                                             &instance.data.command_pool),
-                        "failed to create command pool!");
+                        "create command pool!");
     }
 
     auto createCommandBuffers() -> void {
@@ -545,7 +553,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         VK_CHECK_RESULT(
             vkAllocateCommandBuffers(instance.device, &allocInfo,
                                      instance.data.command_buffers.data()),
-            "failed to allocate command buffers!");
+            "allocate command buffers!");
 
         for (size_t i = 0; i < instance.data.command_buffers.size(); i++) {
             VkCommandBufferBeginInfo begin_info = {};
@@ -553,7 +561,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
             VK_CHECK_RESULT(vkBeginCommandBuffer(
                                 instance.data.command_buffers[i], &begin_info),
-                            "failed to begin recording command buffers!");
+                            "begin recording command buffers!");
 
             VkRenderPassBeginInfo render_pass_info = {};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -595,7 +603,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
 
             VK_CHECK_RESULT(
                 vkEndCommandBuffer(instance.data.command_buffers[i]),
-                "failed to record command buffer!");
+                "record command buffer!");
         }
     }
 
@@ -617,14 +625,14 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             VK_CHECK_RESULT(
                 vkCreateSemaphore(instance.device, &semaphore_info, nullptr,
                                   &instance.data.available_semaphores[i]),
-                "failed to create sync objects!");
+                "create sync objects!");
             VK_CHECK_RESULT(
                 vkCreateSemaphore(instance.device, &semaphore_info, nullptr,
                                   &instance.data.finished_semaphore[i]),
-                "failed to create sync objects!");
+                "create sync objects!");
             VK_CHECK_RESULT(vkCreateFence(instance.device, &fence_info, nullptr,
                                           &instance.data.in_flight_fences[i]),
-                            "failed to create sync objects!");
+                            "create sync objects!");
         }
     }
 
@@ -700,7 +708,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             vkQueueSubmit(
                 instance.data.graphics_queue, 1, &submitInfo,
                 instance.data.in_flight_fences[instance.data.current_frame]),
-            "failed to submit draw command buffer\n");
+            "submit draw command buffer\n");
 
         VkPresentInfoKHR present_info = {};
         present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
