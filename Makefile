@@ -8,5 +8,9 @@ configure:
 
 .PHONY: build
 build: configure
-	cmake --build build 
+	cmake --build build
+
+.PHONY: run
+run: build
+	cd build; ./arteeyes;
 

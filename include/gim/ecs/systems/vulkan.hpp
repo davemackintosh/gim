@@ -33,6 +33,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     VkBuffer uniformBuffer;
     VkDeviceMemory vertexBufferMemory;
     VkDeviceMemory uniformBufferMemory;
+    VkDescriptorSet descriptorSet;
+    VkDescriptorPool descriptorPool;
 
     bool readyToFinishInitialization = false;
 
@@ -152,6 +154,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
             handleMouseMotion(event);
         }
 
+        updateUniformBuffer();
         drawFrame();
     }
 
@@ -245,13 +248,19 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         vkUnmapMemory(instance.device.device, vertexBufferMemory);
     }
 
-    auto createUniformBuffer() -> void {
-        VkBuffer uniformBuffer;
-        VkDeviceMemory uniformBufferMemory;
+    auto updateUniformBuffer() -> void {
+        auto ubo = camera->getShaderUBO().get();
+        void *data;
+        vkMapMemory(instance.device, uniformBufferMemory, 0,
+                    camera->getBufferSize(), 0, &data);
+        memcpy(data, &ubo, camera->getBufferSize());
+        vkUnmapMemory(instance.device, uniformBufferMemory);
+    }
 
+    auto createUniformBuffer() -> void {
         VkBufferCreateInfo bufferInfo = {};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(gim::ecs::components::Camera::CameraUBO);
+        bufferInfo.size = camera->getBufferSize();
         bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -375,11 +384,73 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         color_blending.blendConstants[2] = 0.0f;
         color_blending.blendConstants[3] = 0.0f;
 
+        VkDescriptorSetLayoutBinding layoutBinding = {};
+        layoutBinding.binding = 0;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &layoutBinding;
+
+        VkDescriptorSetLayout descriptorSetLayout;
+        vkCreateDescriptorSetLayout(instance.device, &layoutInfo, nullptr,
+                                    &descriptorSetLayout);
+
+        VkDescriptorPoolSize poolSize = {};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = 1; // Adjust as needed
+
+        VkDescriptorPoolCreateInfo poolInfo = {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.maxSets = 1; // Adjust as needed
+
+        if (vkCreateDescriptorPool(instance.device, &poolInfo, nullptr,
+                                   &descriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create descriptor pool!");
+        }
+
+        VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
+        VkDescriptorSetAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = descriptorPool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = layouts;
+
+        auto allocationResult = vkAllocateDescriptorSets(
+            instance.device, &allocInfo, &descriptorSet);
+        if (allocationResult != VK_SUCCESS) {
+            std::cerr << allocationResult << std::endl;
+            throw std::runtime_error("Failed to allocate descriptor set!");
+        }
+
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = uniformBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = camera->getBufferSize();
+
+        VkWriteDescriptorSet descriptorWrite = {};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = descriptorSet;
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(instance.device, 1, &descriptorWrite, 0,
+                               nullptr);
+
         VkPipelineLayoutCreateInfo pipeline_layout_info = {};
         pipeline_layout_info.sType =
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pushConstantRangeCount = 0;
+        pipeline_layout_info.pSetLayouts = &descriptorSetLayout;
 
         if (vkCreatePipelineLayout(instance.device, &pipeline_layout_info,
                                    nullptr, &instance.data.pipeline_layout) !=
