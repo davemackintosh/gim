@@ -369,7 +369,6 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         color_blending.logicOp = VK_LOGIC_OP_COPY;
         color_blending.attachmentCount = 1;
         color_blending.pAttachments = &colorBlendAttachment;
-
         color_blending.blendConstants[0] = 0.0f;
         color_blending.blendConstants[1] = 0.0f;
         color_blending.blendConstants[2] = 0.0f;
@@ -378,7 +377,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         VkPipelineLayoutCreateInfo pipeline_layout_info = {};
         pipeline_layout_info.sType =
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = 1;
+        pipeline_layout_info.setLayoutCount = 0;
         pipeline_layout_info.pushConstantRangeCount = 0;
 
         if (vkCreatePipelineLayout(instance.device, &pipeline_layout_info,
