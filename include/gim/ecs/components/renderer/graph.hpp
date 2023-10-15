@@ -15,6 +15,10 @@ class Node {
  * it is not responsible for the setup of Vulkan itself but rather
  * the setup and encapsulation of the rendering pipeline.
  *
+ * Also, this graph/trie is not responsible for the actual rendering
+ * actually, it sets up the ability to have sub-graphs in which user
+ * space graphs are created for the rendering pipeline.
+ *
  *             ┌───────────────┐
  *             │   pipeline    │
  *             └───────┬───────┘

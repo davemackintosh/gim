@@ -1,11 +1,23 @@
 #pragma once
 
+#include "gim/vulkan/instance.hpp"
 #include <VkBootstrap.h>
 #include <gim/ecs/engine/component_array.hpp>
 #include <gim/library/glsl.hpp>
 #include <vulkan/vulkan.hpp>
 
 namespace gim::ecs::components::Shader {
+
+template <typename BufferContents> class ShaderBuffer {
+  private:
+    const gim::vulkan::Instance &instance;
+    vk::Buffer contents;
+
+  public:
+    explicit ShaderBuffer(const gim::vulkan::Instance &) = 0;
+    virtual auto GetBuffer() -> vk::Buffer = 0;
+};
+
 template <typename V, typename F = V, typename C = V> class Bindings {
   public:
     std::shared_ptr<V> vertData;
