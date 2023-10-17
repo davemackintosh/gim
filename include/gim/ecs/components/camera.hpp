@@ -13,12 +13,12 @@ enum Mode : uint32_t {
     RTS = 1,
 };
 
-struct CameraUBO {
+struct UBO {
   public:
     glm::mat4 projectionMatrix;
     glm::mat4 viewMatrix;
 
-    CameraUBO(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
+    UBO(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
         : projectionMatrix(projectionMatrix), viewMatrix(viewMatrix) {}
 };
 
@@ -41,9 +41,8 @@ class Component : public gim::ecs::IComponent {
     Component() = default;
     ~Component() override = default;
 
-    [[nodiscard]] auto getShaderUBO() -> std::shared_ptr<CameraUBO> {
-        return std::make_shared<CameraUBO>(getViewMatrix(),
-                                           getProjectionMatrix());
+    [[nodiscard]] auto getShaderUBO() -> std::shared_ptr<UBO> {
+        return std::make_shared<UBO>(getViewMatrix(), getProjectionMatrix());
     }
 
   private:
@@ -58,6 +57,6 @@ class Component : public gim::ecs::IComponent {
 #pragma mark - Shaders.
 
   public:
-    static auto getBufferSize() -> unsigned long { return sizeof(CameraUBO); }
+    static auto getBufferSize() -> unsigned long { return sizeof(UBO); }
 };
 } // namespace gim::ecs::components::Camera

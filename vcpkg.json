@@ -3,6 +3,7 @@
 	"dependencies": [
 		"doctest",
 		"glm",
+		"vulkan-memory-allocator",
 		"vk-bootstrap",
 		{
 			"name": "sdl2",

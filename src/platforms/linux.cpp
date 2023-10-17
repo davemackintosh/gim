@@ -37,37 +37,33 @@ int main() {
 #pragma mark - Shaders
 
     auto triangleShaderEntity = ecs->createEntity();
-    auto triangleBindings =
-        std::make_shared<gim::ecs::components::Shader::TriangleBindings>(
-            std::make_shared<
-                gim::ecs::components::Shader::TriangleVertexShaderData>(
-                gim::ecs::components::Shader::TriangleVertexShaderData{
-                    .vertices =
-                        std::vector<gim::ecs::components::Shader::Vertex>{
-                            {
-                                .position = glm::vec3{1.f, 1.f, 0.f},
-                                .color = glm::vec4(1.f, 0.f, 0.f, 1.f),
-                            },
-                            {
-                                .position = glm::vec3{-1.f, 1.f, 0.f},
-                                .color = glm::vec4(0.f, 1.f, 0.f, 1.f),
-                            },
-                            {
-                                .position = glm::vec3{0.f, -1.f, 0.f},
-                                .color = glm::vec4(0.f, 0.f, 1.f, 1.f),
-                            },
-                        },
-                }));
-    auto triangleShader =
-        std::make_shared<gim::ecs::components::Shader::TriangleShader>(
-            triangleBindings);
+    auto triangleShaderBuilder =
+        std::make_unique<gim::ecs::components::Shader::ShaderBuilder>();
+    triangleShaderBuilder
+        ->setVertexSprv(gim::library::fs::readFile("shaders/triangle.vert.spv"))
+        ->setVertices(std::vector<gim::ecs::components::Shader::Vertex>{
+            {
+                .position = glm::vec3{1.f, 1.f, 0.f},
+                .color = glm::vec4(1.f, 0.f, 0.f, 1.f),
+            },
+            {
+                .position = glm::vec3{-1.f, 1.f, 0.f},
+                .color = glm::vec4(0.f, 1.f, 0.f, 1.f),
+            },
+            {
+                .position = glm::vec3{0.f, -1.f, 0.f},
+                .color = glm::vec4(0.f, 0.f, 1.f, 1.f),
+            },
+        })
+        ->setUniform<gim::ecs::components::Camera::UBO>("MVP",
+                                                        camera->getShaderUBO());
 
 #pragma mark - Add components
 
     // Register the components.
     ecs->addComponent(cameraEntity, camera);
     ecs->addComponent(engineStateEntity, engineState);
-    ecs->addComponent(triangleShaderEntity, triangleShader);
+    ecs->addComponent(triangleShaderEntity, triangleShaderBuilder->build());
 
 #pragma mark - Run the game.
 
