@@ -3,6 +3,7 @@
 	"dependencies": [
 		"doctest",
 		"glm",
+		"fmt",
 		"vulkan-memory-allocator",
 		"vk-bootstrap",
 		{

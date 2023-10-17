@@ -15,7 +15,7 @@ namespace gim::ecs::components::Shader {
 
 class Node {
   public:
-    virtual ~Node() = 0;
+    virtual ~Node() {}
 };
 
 struct Vertex {
@@ -33,21 +33,22 @@ class VertexBuffer : public Node {
 
 class Uniform : public Node {
   public:
-    virtual ~Uniform() = 0;
+    virtual ~Uniform(){};
 };
 
 template <typename Contents> class ShaderUniform : public Uniform {
   public:
     Contents contents;
-    explicit ShaderUniform(Contents *contents) : contents(contents) {}
+    explicit ShaderUniform(Contents contents) : contents(contents) {}
+    ~ShaderUniform(){};
 
-    auto allocate() -> vk::Buffer {
-        VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    auto allocate(VmaAllocator allocator) -> vk::Buffer {
+        VmaAllocationCreateInfo allocInfo = {.usage = VMA_MEMORY_USAGE_AUTO};
 
-        VkBufferCreateInfo bufferInfo = {};
-        bufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        bufferInfo.size = sizeof(Contents);
+        VkBufferCreateInfo bufferInfo = {
+            .size = sizeof(Contents),
+            .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        };
 
         VmaAllocationInfo allocationInfo;
         vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &uniformBuffer,
@@ -109,6 +110,7 @@ class Component : public gim::ecs::IComponent {
     std::vector<char> computeCode;
 
   public:
+    Component() = default;
     Component(std::vector<char> vertStage, std::vector<char> fragStage)
         : vertCode(std::move(vertStage)), fragCode(std::move(fragStage)){};
     Component(std::vector<char> vertStage, std::vector<char> fragStage,
@@ -223,9 +225,8 @@ class ShaderBuilder {
     }
 
     template <typename T>
-    auto setUniform(const std::string &name, std::shared_ptr<T> uniform)
-        -> ShaderBuilder * {
-        auto unboundUniform = ShaderUniform<T>(uniform);
+    auto setUniform(const std::string &name, T uniform) -> ShaderBuilder * {
+        auto unboundUniform = std::make_shared<ShaderUniform<T>>(uniform);
         this->shaderUniforms[name] = unboundUniform;
         return this;
     }
@@ -237,14 +238,14 @@ class ShaderBuilder {
     }
 
     auto build() -> std::shared_ptr<Component> {
-        auto shader = std::make_shared<Component>();
+        auto builtShader = std::make_shared<Component>();
 
         for (const auto &uniform : this->shaderUniforms) {
             auto name = uniform.first;
             auto uniformValue = uniform.second;
         }
 
-        return shader;
+        return builtShader;
     }
 };
 

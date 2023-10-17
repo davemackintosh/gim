@@ -1,11 +1,17 @@
 #pragma once
 
 #include <cassert>
+#include <exception>
+#include <fmt/printf.h>
+#include <format>
 #include <gim/ecs/engine/component_array.hpp>
 #include <gim/ecs/engine/entity_manager.hpp>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <ranges>
+#include <stdexcept>
+#include <string>
 #include <string_view>
 #include <typeinfo>
 
@@ -23,8 +29,12 @@ class ComponentManager {
     template <typename T> auto getComponentArray() -> ComponentArray<T> * {
         std::string_view typeName = typeid(T).name();
 
-        assert(componentArrays.find(typeName) != componentArrays.end() &&
-               "Component not registered before use.");
+        if (componentArrays.find(typeName) == componentArrays.end()) {
+            throw std::runtime_error(
+                fmt::format("Component '{}' not registered before use.\n",
+                            typeName)
+                    .data());
+        }
 
         return std::static_pointer_cast<ComponentArray<T>>(
                    componentArrays.at(typeName))
@@ -36,8 +46,12 @@ class ComponentManager {
     template <typename T> auto registerComponent() -> void {
         std::string_view typeName = typeid(T).name();
 
-        assert(componentArrays.find(typeName) == componentArrays.end() &&
-               "Registering component type more than once.");
+        if (componentArrays.find(typeName) != componentArrays.end()) {
+            throw std::runtime_error(
+                fmt::format("Registering component type '{}' more than once.\n",
+                            typeName)
+                    .data());
+        }
 
         componentArrays.insert(
             {typeName, std::make_shared<ComponentArray<T>>()});

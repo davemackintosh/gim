@@ -55,7 +55,7 @@ int main() {
                 .color = glm::vec4(0.f, 0.f, 1.f, 1.f),
             },
         })
-        ->setUniform<gim::ecs::components::Camera::UBO>("MVP",
+        ->setUniform<std::shared_ptr<gim::ecs::components::Camera::UBO>>("MVP",
                                                         camera->getShaderUBO());
 
 #pragma mark - Add components

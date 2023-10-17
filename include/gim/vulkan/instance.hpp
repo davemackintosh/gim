@@ -6,6 +6,7 @@
 #include <gim/library/fs.hpp>
 #include <gim/library/glsl.hpp>
 #include <gim/vulkan/utils.hpp>
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
 namespace gim::vulkan {
@@ -41,14 +42,25 @@ class Instance {
     vkb::Device device;
     vkb::Swapchain swapchain;
     RenderData data;
+    VmaAllocator allocator;
 
     Instance() {
         createInstance();
         createWindow();
         pickPhysicalDevice();
+        createAllocator();
         createSwapchain();
         getQueues();
         createRenderPass();
+    }
+
+    auto createAllocator() -> void {
+        VmaAllocatorCreateInfo allocatorInfo = {
+            .physicalDevice = physicalDevice.physical_device,
+            .device = device,
+            .instance = instance};
+
+        vmaCreateAllocator(&allocatorInfo, &allocator);
     }
 
     auto createSwapchain() -> void {
@@ -64,6 +76,8 @@ class Instance {
     }
 
   private:
+    vkb::PhysicalDevice physicalDevice;
+
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
@@ -113,8 +127,8 @@ class Instance {
         if (!phys_device_ret) {
             throw std::runtime_error(phys_device_ret.error().message());
         }
-        vkb::PhysicalDevice physical_device = phys_device_ret.value();
-        vkb::DeviceBuilder device_builder{physical_device};
+        physicalDevice = phys_device_ret.value();
+        vkb::DeviceBuilder device_builder{physicalDevice};
         auto device_ret = device_builder.build();
         if (!device_ret) {
             throw std::runtime_error(device_ret.error().message());
@@ -122,7 +136,6 @@ class Instance {
 
         device = device_ret.value();
     }
-
 
     auto getQueues() -> void {
         auto gq = device.get_queue(vkb::QueueType::graphics);

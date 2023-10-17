@@ -16,12 +16,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Vulkan REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(vk-bootstrap CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 find_path(VKB_INCLUDES VkBootstrap.h)
+find_path(VMA_INCLUDES vk_mem_alloc.h)
 
 # SOURCES
-set(SOURCES ./src/platforms/linux.cpp ./src/library/fs.cpp)
-include_directories(./include ${VK_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR}/include)
+set(SOURCES ./src/platforms/linux.cpp ./src/library/fs.cpp
+            ./src/library/vma.cpp)
+include_directories(./include ${VKB_INCLUDES} ${VMA_INCLUDES}
+                    ${CMAKE_CURRENT_BINARY_DIR}/include)
 configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -35,6 +40,10 @@ append_glsl_to_target(
 # LINKER
 target_link_libraries(
   ${PROJECT_NAME}
-  PRIVATE glm::glm $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+  PRIVATE glm::glm
+          $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
           $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-          Vulkan::Vulkan vk-bootstrap::vk-bootstrap)
+          Vulkan::Vulkan
+          vk-bootstrap::vk-bootstrap
+          GPUOpen::VulkanMemoryAllocator
+          fmt::fmt)
