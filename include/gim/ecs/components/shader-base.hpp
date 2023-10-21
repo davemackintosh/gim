@@ -2,6 +2,7 @@
 
 #include "gim/vulkan/instance.hpp"
 #include <VkBootstrap.h>
+#include <fmt/core.h>
 #include <gim/ecs/engine/component_array.hpp>
 #include <gim/library/glsl.hpp>
 #include <glm/vec3.hpp>
@@ -41,19 +42,6 @@ template <typename Contents> class ShaderUniform : public Uniform {
     Contents contents;
     explicit ShaderUniform(Contents contents) : contents(contents) {}
     ~ShaderUniform(){};
-
-    auto allocate(VmaAllocator allocator) -> vk::Buffer {
-        VmaAllocationCreateInfo allocInfo = {.usage = VMA_MEMORY_USAGE_AUTO};
-
-        VkBufferCreateInfo bufferInfo = {
-            .size = sizeof(Contents),
-            .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        };
-
-        VmaAllocationInfo allocationInfo;
-        vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &uniformBuffer,
-                        &uniformBufferAllocation, &allocationInfo);
-    }
 
   private:
     vk::Buffer uniformBuffer;
@@ -105,12 +93,15 @@ class Component : public gim::ecs::IComponent {
     VkShaderModule vertModule = VK_NULL_HANDLE;
     VkShaderModule fragModule = VK_NULL_HANDLE;
     VkShaderModule compModule = VK_NULL_HANDLE;
-    std::vector<char> vertCode;
-    std::vector<char> fragCode;
+    std::vector<char> vertCode =
+        gim::library::fs::readFile("shaders/triangle.vert.spv");
+    std::vector<char> fragCode =
+        gim::library::fs::readFile("shaders/triangle.frag.spv");
     std::vector<char> computeCode;
 
   public:
     Component() = default;
+
     Component(std::vector<char> vertStage, std::vector<char> fragStage)
         : vertCode(std::move(vertStage)), fragCode(std::move(fragStage)){};
     Component(std::vector<char> vertStage, std::vector<char> fragStage,
@@ -177,6 +168,8 @@ class Component : public gim::ecs::IComponent {
             if (vertStage) {
                 shaderStages.push_back(*vertStage);
             }
+        } else {
+            fmt::print("no vertCode");
         }
 
         if (!fragCode.empty()) {
@@ -184,6 +177,8 @@ class Component : public gim::ecs::IComponent {
             if (fragStage) {
                 shaderStages.push_back(*fragStage);
             }
+        } else {
+            fmt::print("no fragCode");
         }
 
         if (!computeCode.empty()) {
@@ -191,6 +186,8 @@ class Component : public gim::ecs::IComponent {
             if (compStage) {
                 shaderStages.push_back(*compStage);
             }
+        } else {
+            fmt::print("no computeCode");
         }
 
         return shaderStages;
@@ -209,6 +206,7 @@ class ShaderBuilder {
     std::map<std::string, std::shared_ptr<Uniform>> shaderUniforms;
 
   public:
+    auto getVertices() { return vertices; }
     auto setVertexSprv(std::vector<char> vertSprv) -> ShaderBuilder * {
         this->vertCode = std::move(vertSprv);
         return this;
@@ -235,6 +233,45 @@ class ShaderBuilder {
         -> ShaderBuilder * {
         this->vertices = verticesData;
         return this;
+    }
+
+    static auto getVertexBindingDescriptionsForDevice()
+        -> std::vector<VkVertexInputBindingDescription> {
+        return {
+            {
+                .binding = 0,
+                .stride = sizeof(Vertex),
+                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+            },
+        };
+    }
+
+    static auto getVertexAttributesDescriptionsForDevice()
+        -> std::vector<VkVertexInputAttributeDescription> {
+        return {
+            {
+                .location = 0,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
+                .offset = offsetof(Vertex, position),
+            },
+            {
+                .location = 2,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
+                .offset = offsetof(Vertex, color),
+            },
+        };
+    }
+
+    static auto getFragmentBindingDescriptionsForDevice()
+        -> std::vector<VkDescriptorSetLayoutBinding> {
+        return {};
+    }
+
+    static auto getFragmentAttributesDescriptionsForDevice()
+        -> std::vector<VkDescriptorSetLayoutBinding> {
+        return {};
     }
 
     auto build() -> std::shared_ptr<Component> {

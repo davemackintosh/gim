@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gim/ecs/components/camera.hpp"
+#include "gim/ecs/components/shader-base.hpp"
 #include "gim/ecs/engine/entity_manager.hpp"
 #include "vulkan/vulkan_core.h"
 #include <SDL2/SDL.h>
@@ -34,7 +35,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     VkDeviceMemory vertexBufferMemory;
 
     // Engine.
-    std::shared_ptr<gim::ecs::components::Shader::TriangleShader> shader;
+    std::shared_ptr<gim::ecs::components::Shader::ShaderBuilder> shaderBuilder;
     std::shared_ptr<gim::ecs::components::Camera::Component> camera;
 
   public:
@@ -49,7 +50,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         auto signature = std::make_shared<Signature>();
         signature->set<gim::ecs::components::Camera::Component>();
         signature->set<gim::ecs::components::EngineState::Component>();
-        signature->set<gim::ecs::components::Shader::TriangleShader>();
+        signature->set<gim::ecs::components::Shader::ShaderBuilder>();
 
         return signature;
     }
@@ -103,7 +104,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         auto engineStatePair = componentManager->getTComponentWithEntity<
             gim::ecs::components::EngineState::Component>(getEntities());
         auto triangleShaderPair = componentManager->getTComponentWithEntity<
-            gim::ecs::components::Shader::TriangleShader>(getEntities());
+            gim::ecs::components::Shader::ShaderBuilder>(getEntities());
         auto cameraPair = componentManager->getTComponentWithEntity<
             gim::ecs::components::Camera::Component>(getEntities());
 
@@ -126,7 +127,7 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         auto [_t, triangleShaderComponent] = triangleShaderPair.value();
         auto [_c, cameraComponent] = cameraPair.value();
 
-        shader = triangleShaderComponent;
+        shaderBuilder = triangleShaderComponent;
         camera = cameraComponent;
 
         if (!readyToFinishInitialization) {
@@ -201,7 +202,8 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
     auto createVertexBuffer() -> void {
         VkBufferCreateInfo bufferInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size = shader->getBindings()->getBufferSize(),
+            .size = sizeof(components::Shader::Vertex) *
+                    shaderBuilder->getVertices().size(),
             .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         };
@@ -235,23 +237,24 @@ class VulkanRendererSystem : public gim::ecs::ISystem {
         void *data;
         vkMapMemory(instance.device.device, vertexBufferMemory, 0,
                     bufferInfo.size, 0, &data);
-        memcpy(data, shader->getBindings()->vertData->vertices.data(),
+        memcpy(data, shaderBuilder->getVertices().data(),
                (size_t)bufferInfo.size);
         vkUnmapMemory(instance.device.device, vertexBufferMemory);
     }
 
     auto createGraphicsPipeline() -> void {
-        if (!shader) {
+        auto builtShader = shaderBuilder->build();
+        if (!shaderBuilder) {
             std::cout << "Required triangle shader not found!" << std::endl;
             return;
         }
-        auto shader_stages = shader->getShaderStageCreateInfo(instance.device);
+        auto shader_stages =
+            builtShader->getShaderStageCreateInfo(instance.device);
 
-        auto shaderBindings = shader->getBindings();
         auto shaderVertexBindings =
-            shaderBindings->getVertexBindingDescriptionsForDevice();
+            shaderBuilder->getVertexBindingDescriptionsForDevice();
         auto shaderAttributes =
-            shaderBindings->getVertexAttributesDescriptionsForDevice();
+            shaderBuilder->getVertexAttributesDescriptionsForDevice();
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
         vertexInputInfo.sType =

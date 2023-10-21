@@ -18,6 +18,8 @@ int main() {
 
     // Register all the components.
     ecs->registerComponent<gim::ecs::components::EngineState::Component>();
+    ecs->registerComponent<gim::ecs::components::Shader::Component>();
+    ecs->registerComponent<gim::ecs::components::Shader::ShaderBuilder>();
     ecs->registerComponent<gim::ecs::components::Shader::TriangleShader>();
     ecs->registerComponent<gim::ecs::components::Camera::Component>();
 
@@ -38,7 +40,7 @@ int main() {
 
     auto triangleShaderEntity = ecs->createEntity();
     auto triangleShaderBuilder =
-        std::make_unique<gim::ecs::components::Shader::ShaderBuilder>();
+        std::make_shared<gim::ecs::components::Shader::ShaderBuilder>();
     triangleShaderBuilder
         ->setVertexSprv(gim::library::fs::readFile("shaders/triangle.vert.spv"))
         ->setVertices(std::vector<gim::ecs::components::Shader::Vertex>{
@@ -55,15 +57,15 @@ int main() {
                 .color = glm::vec4(0.f, 0.f, 1.f, 1.f),
             },
         })
-        ->setUniform<std::shared_ptr<gim::ecs::components::Camera::UBO>>("MVP",
-                                                        camera->getShaderUBO());
+        ->setUniform<std::shared_ptr<gim::ecs::components::Camera::UBO>>(
+            "MVP", camera->getShaderUBO());
 
 #pragma mark - Add components
 
     // Register the components.
     ecs->addComponent(cameraEntity, camera);
     ecs->addComponent(engineStateEntity, engineState);
-    ecs->addComponent(triangleShaderEntity, triangleShaderBuilder->build());
+    ecs->addComponent(triangleShaderEntity, triangleShaderBuilder);
 
 #pragma mark - Run the game.
 
