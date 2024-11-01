@@ -8,6 +8,7 @@ configure:
 
 .PHONY: build
 build: configure
+	mkdir build || true
 	cmake --build build
 
 .PHONY: run
