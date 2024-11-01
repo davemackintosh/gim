@@ -1,5 +1,3 @@
-#set(GLSL_VALIDATOR "$ENV{VULKAN_SDK}bin/glslangValidator")
-
 macro(append_glsl_to_target)
   message("Processing shaders: ${ARGV}")
   foreach(GLSL ${ARGV})
