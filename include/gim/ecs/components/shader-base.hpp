@@ -16,7 +16,12 @@ namespace gim::ecs::components::Shader {
 
 class Node {
   public:
-    virtual ~Node() {}
+    Node() = default;
+    Node(const Node &) = default;
+    Node(Node &&) = delete;
+    auto operator=(const Node &) -> Node & = default;
+    auto operator=(Node &&) -> Node & = delete;
+    virtual ~Node() = default;
 };
 
 struct Vertex {
@@ -34,18 +39,27 @@ class VertexBuffer : public Node {
 
 class Uniform : public Node {
   public:
-    virtual ~Uniform(){};
+    Uniform() = default;
+    Uniform(const Uniform &) = default;
+    Uniform(Uniform &&) = delete;
+    auto operator=(const Uniform &) -> Uniform & = default;
+    auto operator=(Uniform &&) -> Uniform & = delete;
+    ~Uniform() override = default;
 };
 
 template <typename Contents> class ShaderUniform : public Uniform {
   public:
-    Contents contents;
+    ShaderUniform(const ShaderUniform &) = delete;
+    ShaderUniform(ShaderUniform &&) = delete;
+    auto operator=(const ShaderUniform &) -> ShaderUniform & = delete;
+    auto operator=(ShaderUniform &&) -> ShaderUniform & = delete;
     explicit ShaderUniform(Contents contents) : contents(contents) {}
-    ~ShaderUniform(){};
+    ~ShaderUniform() override = default;
 
   private:
+    Contents contents;
     vk::Buffer uniformBuffer;
-    VmaAllocation uniformBufferAllocation;
+    VmaAllocation uniformBufferAllocation{};
 };
 
 #pragma mark - Bindings
@@ -102,14 +116,18 @@ class Component : public gim::ecs::IComponent {
   public:
     Component() = default;
 
+    Component(const Component &) = default;
+    Component(Component &&) = delete;
+    auto operator=(const Component &) -> Component & = default;
+    auto operator=(Component &&) -> Component & = delete;
     Component(std::vector<char> vertStage, std::vector<char> fragStage)
-        : vertCode(std::move(vertStage)), fragCode(std::move(fragStage)){};
+        : vertCode(std::move(vertStage)), fragCode(std::move(fragStage)) {};
     Component(std::vector<char> vertStage, std::vector<char> fragStage,
               std::vector<char> computeStage)
         : vertCode(std::move(vertStage)), fragCode(std::move(fragStage)),
-          computeCode(std::move(computeStage)){};
+          computeCode(std::move(computeStage)) {};
 
-    ~Component(){};
+    ~Component() override = default;
 
     static auto getShaderStage(VkShaderStageFlagBits stage,
                                VkShaderModule shaderModule)

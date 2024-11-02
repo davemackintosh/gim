@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22.1)
 
 project(
-  arteeyes
+  walk-to-utopia
   VERSION 0.1.0
   DESCRIPTION "Gim. I test gim."
   LANGUAGES CXX)

@@ -11,7 +11,7 @@
 
 struct VertexData {};
 
-int main() {
+auto main() -> int {
     auto ecs = std::make_shared<gim::ecs::ECS>();
 
 #pragma mark - Register components
@@ -45,16 +45,16 @@ int main() {
         ->setVertexSprv(gim::library::fs::readFile("shaders/triangle.vert.spv"))
         ->setVertices(std::vector<gim::ecs::components::Shader::Vertex>{
             {
-                .position = glm::vec3{1.f, 1.f, 0.f},
-                .color = glm::vec4(1.f, 0.f, 0.f, 1.f),
+                .position = glm::vec3{1.F, 1.F, 0.F},
+                .color = glm::vec4(1.F, 0.F, 0.F, 1.F),
             },
             {
-                .position = glm::vec3{-1.f, 1.f, 0.f},
-                .color = glm::vec4(0.f, 1.f, 0.f, 1.f),
+                .position = glm::vec3{-1.F, 1.F, 0.F},
+                .color = glm::vec4(0.F, 1.F, 0.F, 1.F),
             },
             {
-                .position = glm::vec3{0.f, -1.f, 0.f},
-                .color = glm::vec4(0.f, 0.f, 1.f, 1.f),
+                .position = glm::vec3{0.F, -1.F, 0.F},
+                .color = glm::vec4(0.F, 0.F, 1.F, 1.F),
             },
         })
         ->setUniform<std::shared_ptr<gim::ecs::components::Camera::UBO>>(

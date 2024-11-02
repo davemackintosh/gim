@@ -14,6 +14,10 @@ class Component : public gim::ecs::IComponent {
     EngineState state = EngineState::Running;
 
     Component() = default;
+    Component(const Component &) = default;
+    Component(Component &&) = delete;
+    auto operator=(const Component &) -> Component & = default;
+    auto operator=(Component &&) -> Component & = delete;
     ~Component() override = default;
 };
 } // namespace gim::ecs::components::EngineState

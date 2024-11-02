@@ -3,7 +3,7 @@ include(FetchContent)
 include("./cmake/compileGLSL.cmake")
 
 project(
-  arteeyes
+  walk-to-utopia
   VERSION 0.1.0.0
   DESCRIPTION "Gim. I make gim."
   LANGUAGES CXX)
@@ -23,6 +23,7 @@ find_path(VKB_INCLUDES VkBootstrap.h)
 find_path(VMA_INCLUDES vk_mem_alloc.h)
 
 # SOURCES
+include("./cmake/memory-safety.cmake")
 set(SOURCES ./src/platforms/linux.cpp ./src/library/fs.cpp
             ./src/library/vma.cpp)
 include_directories(./include ${VKB_INCLUDES} ${VMA_INCLUDES}

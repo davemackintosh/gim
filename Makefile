@@ -11,11 +11,12 @@ configure:
 .PHONY: build
 build: configure
 	mkdir build || true
-	${CMAKE_CMD} --build build
+	${CMAKE_CMD} build
+	cd build; make
 
 .PHONY: run
 run: build
-	cd build; ./arteeyes
+	cd build; ./walk-to-utopia
 
 build-windows:
 	${CMAKE_CMD} -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=cmake/windows-toolchain.cmake

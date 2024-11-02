@@ -7,6 +7,14 @@
 #include <memory>
 #include <vulkan/vulkan.hpp>
 
+const static auto FOV_DEFAULT = 45.0F;
+const static auto NEAR_PLANE_DEFAULT = 0.1F;
+const static auto FAR_PLANE_DEFAULT = 1000.F;
+const static auto SPEED_DEFAULT = 0.05F;
+const static auto YAW_DEFAULT = -90.F;
+const static auto PITCH_DEFAULT = 0.F;
+const static auto SENSITIVITY_DEFAULT = 0.1F;
+
 namespace gim::ecs::components::Camera {
 enum Mode : uint32_t {
     FirstPerson = 0,
@@ -18,27 +26,31 @@ struct UBO {
     glm::mat4 projectionMatrix;
     glm::mat4 viewMatrix;
 
-    UBO(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
+    UBO(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) // NOLINT
         : projectionMatrix(projectionMatrix), viewMatrix(viewMatrix) {}
 };
 
 class Component : public gim::ecs::IComponent {
   public:
     Mode mode = Mode::FirstPerson;
-    float FOV = glm::radians(45.0f);
-    float aspectRatio = 1.f; // static_cast<float>(windowWidth) /
+    float FOV = glm::radians(FOV_DEFAULT);
+    float aspectRatio = 1.F; // static_cast<float>(windowWidth) /
                              // static_cast<float>(windowHeight);
-    float nearPlane = 0.1f;
-    float farPlane = 1000.f;
-    glm::vec3 position = glm::vec3(0.0f, 0.0f, -0.f);
-    glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.f);
-    float speed = 0.05f;
-    float yaw = -90.f;
-    float pitch = 0.f;
-    float sensitivity = 0.1f;
+    float nearPlane = NEAR_PLANE_DEFAULT;
+    float farPlane = FAR_PLANE_DEFAULT;
+    glm::vec3 position = glm::vec3(0.0F, 0.0F, -0.F);
+    glm::vec3 front = glm::vec3(0.0F, 0.0F, -1.F);
+    glm::vec3 up = glm::vec3(0.0F, 1.0F, 0.F);
+    float speed = SPEED_DEFAULT;
+    float yaw = YAW_DEFAULT;
+    float pitch = PITCH_DEFAULT;
+    float sensitivity = SENSITIVITY_DEFAULT;
 
     Component() = default;
+    Component(const Component &) = default;
+    Component(Component &&) = delete;
+    auto operator=(const Component &) -> Component & = default;
+    auto operator=(Component &&) -> Component & = delete;
     ~Component() override = default;
 
     [[nodiscard]] auto getShaderUBO() -> std::shared_ptr<UBO> {

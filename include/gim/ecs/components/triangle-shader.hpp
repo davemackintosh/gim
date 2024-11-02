@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <gim/ecs/components/shader-base.hpp>
 #include <gim/ecs/engine/component_array.hpp>
 #include <gim/library/fs.hpp>
@@ -30,8 +29,13 @@ class TriangleBindings final
 
     TriangleBindings() = default;
 
+    TriangleBindings(const TriangleBindings &) = default;
+    TriangleBindings(TriangleBindings &&) = delete;
+    auto operator=(const TriangleBindings &) -> TriangleBindings & = default;
+    auto operator=(TriangleBindings &&) -> TriangleBindings & = delete;
+
     auto getBufferSize() -> unsigned long override {
-        return sizeof(this->vertData[0]) * vertData->vertices.size();
+        return sizeof(TriangleVertexShaderData) * vertData->vertices.size();
     }
 
     auto getVertexBindingDescriptionsForDevice()
@@ -83,9 +87,8 @@ class TriangleShader : public gim::ecs::components::Shader::Component {
   public:
     explicit TriangleShader(const std::shared_ptr<TriangleBindings> &bindings)
         : Component(gim::library::fs::readFile("shaders/triangle.vert.spv"),
-                    gim::library::fs::readFile("shaders/triangle.frag.spv")) {
-        this->bindings = bindings;
-    }
+                    gim::library::fs::readFile("shaders/triangle.frag.spv")),
+          bindings(bindings) {}
 
     auto getBindings() -> std::shared_ptr<TriangleBindings> { return bindings; }
 };
