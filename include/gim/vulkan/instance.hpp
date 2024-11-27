@@ -13,7 +13,7 @@ namespace gim::vulkan {
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-struct RenderData {
+struct RenderData { // NOLINT
     VkQueue graphics_queue;
     VkQueue present_queue;
 
@@ -44,7 +44,7 @@ class Instance {
     RenderData data;
     VmaAllocator allocator;
 
-    Instance() {
+    Instance() { // NOLINT
         createInstance();
         createWindow();
         pickPhysicalDevice();
@@ -53,6 +53,33 @@ class Instance {
         getQueues();
         createRenderPass();
     }
+
+    auto cleanup() {
+        for (auto fence : data.in_flight_fences) {
+            vkDestroyFence(device, fence, nullptr);
+        }
+        vkDestroyPipelineLayout(device, data.pipeline_layout, nullptr);
+        vkDestroyRenderPass(device, data.render_pass, nullptr);
+        for (auto imageView : data.swapchain_image_views) {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapchain.swapchain, nullptr);
+        vkDestroyDevice(device, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        vmaDestroyAllocator(allocator);
+        vkDestroyInstance(instance, nullptr);
+    }
+
+    auto destroy() {
+        cleanup();
+        vkDestroyInstance(instance, nullptr);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+    }
+
+    ~Instance() { destroy(); }
 
     auto createAllocator() -> void {
         VmaAllocatorCreateInfo allocatorInfo = {
@@ -82,7 +109,7 @@ class Instance {
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
 
-        [[nodiscard]] bool isComplete() const {
+        [[nodiscard]] auto isComplete() const -> bool {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
     };

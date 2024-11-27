@@ -24,8 +24,8 @@ find_path(VMA_INCLUDES vk_mem_alloc.h)
 
 # SOURCES
 include("./cmake/memory-safety.cmake")
-set(SOURCES ./src/platforms/linux.cpp ./src/library/fs.cpp
-            ./src/library/vma.cpp)
+set(SOURCES ./src/platforms/linux.cpp ./src/ecs/systems/vulkan.cpp
+            ./src/library/fs.cpp ./src/library/vma.cpp)
 include_directories(./include ${VKB_INCLUDES} ${VMA_INCLUDES}
                     ${CMAKE_CURRENT_BINARY_DIR}/include)
 configure_file(./include/gim/engine.hpp.in ./include/gim/engine.hpp)
